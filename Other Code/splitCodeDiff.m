@@ -85,7 +85,7 @@ for j = 1:length(iBlkC)
     end
 
     % sets the new code block into the data struct
-    CBlk(j).Code = cellfun(@(x)(setCodeLine(x)),cBlkNw(2:end),'un',0);            
+    CBlk(j).Code = cellfun(@(x)(x(2:end)),cBlkNw(2:end),'un',0);            
     CBlk(j).iLine = cell(length(CBlk(j).Code),2);  
     CBlk(j).Type = zeros(length(CBlk(j).Code),1);  
 
@@ -110,8 +110,3 @@ for j = 1:length(iBlkC)
         end
     end
 end
-
-% --- retrieves the code line
-function cStr = setCodeLine(cStr)
-
-cStr = cStr(2:end);

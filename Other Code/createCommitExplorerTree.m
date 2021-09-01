@@ -5,7 +5,7 @@ function jRoot = createCommitExplorerTree(handles,sDiff)
 import com.mathworks.mwswing.checkboxtree.*
 
 % parameters and initialisations
-[dX,eStr] = deal(10,{'off','on'});
+dX = 10;
 hPanel = handles.panelFileChanges;
 rStr = {'Current local version is up to date!','Code Changes...'};
 hasFiles = any(cellfun(@length,getAllStructFields(sDiff)) > 0);
@@ -37,14 +37,14 @@ end
 % retrieves the object position
 pPos = get(hPanel,'position');
 
-% Now present the CheckBoxTree
+% creates the final tree explorer object
 jTree = com.mathworks.mwswing.MJTree(jRoot);
 jCheckBoxTree = handle(CheckBoxTree(jTree.getModel),'CallbackProperties');
 jScrollPane = com.mathworks.mwswing.MJScrollPane(jCheckBoxTree);
 [~,~] = javacomponent(jScrollPane,[dX*[1 1],pPos(3:4)-[2*dX,35]],hPanel);
 
 % only enabled the commit button if there are any commits available
-set(handles.buttonPushCommit,'enable',eStr{1+hasFiles})
+setObjEnable(handles.buttonPushCommit,hasFiles)
 
 % sets the callback function
 hBut = handles.buttonPushCommit;
@@ -54,8 +54,7 @@ set(jCheckBoxTree,'MouseClickedCallback',{@selectCallback,jRoot,hBut})
 function selectCallback(~,~,jRoot,hBut)
 
 % updates the commit buttons enabled properties
-eStr = {'off','on'};
-set(hBut,'enable',eStr{1+~isempty(getSelectedTreeNodes(jRoot))})
+setObjEnable(hBut,~isempty(getSelectedTreeNodes(jRoot)))
 
 % --- creates the child node for the root node for the fStrSp strings 
 function jChild = setupChildNode(jRoot,fStrSp)

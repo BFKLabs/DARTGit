@@ -34,7 +34,8 @@ finishDate = sprintf('%i-%i-%i',d1.Year,d1.Day,d1.Month);
 
 % sets the git function/branch strings
 if GF.uType == 0
-    [gFcn,brStr] = deal('branch-log',pBr);
+    [gFcn,brStr] = deal('branch-log-remote',pBr);
+    if isempty(brStr); brStr = 'master'; end
 else
     [gFcn,brStr] = deal('branch-log-remote','master');
 end

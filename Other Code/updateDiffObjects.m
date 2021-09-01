@@ -1,10 +1,9 @@
 % --- updates the difference list objects
-function updateDiffObjects(handles,pDiff)
+function updateDiffObjects(handles,jTab,pDiff)
 
 % initialisations
 dType = fieldnames(pDiff);
 hTabG = findall(handles.panelFileSelect,'tag','hTabDiff');
-jTab = getappdata(handles.figGitVersion,'jTab');
 
 % updates the tab/listboxes for each file action type
 for i = 1:length(dType)
@@ -37,5 +36,6 @@ for i = 1:length(dType)
     end
     
     % de-selects the listbox
+    set(hTxt,'BackgroundColor',0.94*ones(1,3))
     set(hList,'max',2,'value',[])
 end

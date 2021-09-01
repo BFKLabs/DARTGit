@@ -18,38 +18,42 @@ lBr = cellfun(@(x)(x(3:end)),lBr0(hasLW),'un',0);
 for i = 1:length(lBr)
     % retrieves the commit history for the 
     gHistL = getLocalCommitHistory(GF,lBr{i},gHistAll); 
-    lID = field2cell(gHistL,'ID');
-    
-    % updates the branch with the entire history
-    cBrStr = strrep(lBr{i},'-','');
-    gHistAll = setStructField(gHistAll,cBrStr,gHistL);
-    
-    % determines the master node the local-branch is under
-    iSelM = find(strcmp(mID,lID{end}));
-    if ~isempty(iSelM)
-        % retrieves the main branch node
-        hNodeM = hRoot.getChildAt(iSelM-1);
-        hNodeM.setAllowsChildren(true)
-        
-        % adds the sub-nodes
-        iSelL = (length(gHistL)-1) - (find(strcmp(lID,cID))-1);
-        hNodeM = addTreeSubNodes(hNodeM,gHistL(end-1:-1:1),iSelL,iSelM);
-        
-        % determines if the last node added is the current commit
-        if strcmp(lBr{i},GF.getCurrentBranch) && strcmp(gHistL(1).ID,cID)
-            % if so, then determine if the code has changed
-            codeDiff = GF.gitCmd('diff-commit',gHistL(1).ID);
-            if ~isempty(codeDiff)
-                % retrieves the current last node
-                hNodePr = hNodeM.getChildAt(length(gHistL)-2);
-                
-                % if so, then add another node to the tree
-                addUncommitedChngNode(hTree,hNodeM,hNodePr);                         
+    if isempty(gHistL)
+        GF.gitCmd('delete-local',lBr{i});
+    else
+        lID = field2cell(gHistL,'ID');
+
+        % updates the branch with the entire history
+        cBrStr = strrep(lBr{i},'-','');
+        gHistAll = setStructField(gHistAll,cBrStr,gHistL);
+
+        % determines the master node the local-branch is under
+        iSelM = find(strcmp(mID,lID{end}));
+        if ~isempty(iSelM)
+            % retrieves the main branch node
+            hNodeM = hRoot.getChildAt(iSelM-1);
+            hNodeM.setAllowsChildren(true)
+
+            % adds the sub-nodes
+            iSelL = (length(gHistL)-1) - (find(strcmp(lID,cID))-1);
+            hNodeM = addTreeSubNodes(hNodeM,gHistL(end-1:-1:1),iSelL,iSelM);
+
+            % determines if the last node added is the current commit
+            if strcmp(lBr{i},GF.getCurrentBranch) && strcmp(gHistL(1).ID,cID)
+                % if so, then determine if the code has changed
+                codeDiff = GF.gitCmd('diff-commit',gHistL(1).ID);
+                if ~isempty(codeDiff)
+                    % retrieves the current last node
+                    hNodePr = hNodeM.getChildAt(length(gHistL)-2);
+
+                    % if so, then add another node to the tree
+                    addUncommitedChngNode(hTree,hNodeM,hNodePr);                         
+                end
             end
+
+            % expands the node
+            hTree.expand(hNodeM)
         end
-        
-        % expands the node
-        hTree.expand(hNodeM)
     end
 end
 

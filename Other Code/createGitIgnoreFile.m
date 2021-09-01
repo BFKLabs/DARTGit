@@ -31,18 +31,18 @@ end
 % initialisations
 [ignoreFileR,allowFileR] = deal([]);
 allowFileC = {'*.fig'};
-ignoreFileC = {'*.asv','*.exe'};
 
 % sets the repository specific files to ignore
 switch GF.rType
     case 'Main' % case is the main DART repository
-        allowFileR = {'*.m'};
-        ignoreFileR = {'DART/','External Files/','Para Files/',...
-                       'Code/Common/Git'};        
+        allowFileR = {'*.m','/Code'};
+        ignoreFileR = {'/Code/Common/Git',...
+                       '/Code/Executable Only',...
+                       '/Code/External Apps'};        
         
     case 'Git' % case is the Git functions
-        allowFileR = {'*.p'};
-        ignoreFileR = {'Repo/'};
+        allowFileR = {'*.p','*.m'};
+        ignoreFileR = {'Repo'};
         
     case 'AnalysisGen' % case is the general analysis functions
         allowFileR = {'*.m'};
@@ -54,7 +54,7 @@ end
 fid = fopen(igFile,'w');
 
 % prints the top line
-fprintf(fid,'# flag to ignore all files\n*\n');
+fprintf(fid,'# flag to ignore all files\n*.*\n/*\n');
 
 % outputs the allowed files/directories
 fprintf(fid,'\n# allowed files/directories\n');
@@ -65,9 +65,8 @@ end
 
 % outputs the ignored files/directories
 fprintf(fid,'\n# ignored files/directories\n');
-ignoreFile = [ignoreFileC,ignoreFileR];  
-for i = 1:length(ignoreFile)
-    fprintf(fid,'%s\n',ignoreFile{i});
+for i = 1:length(ignoreFileR)
+    fprintf(fid,'%s\n',ignoreFileR{i});
 end
     
 % closes the file

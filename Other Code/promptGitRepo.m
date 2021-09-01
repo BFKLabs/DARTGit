@@ -63,7 +63,8 @@ gDir = {};
 if isempty(dName)
     return
 else
-    isOK = cellfun(@(x)(~(strcmp(x,'.')||strcmp(x,'..'))),dName);
+    isOK = ~(strcmp(dName,'.') | strcmp(dName,'..') | ...
+             strContains(dName,'_mcr'));
     [dName,isDir] = deal(dName(isOK),cell2mat(isDir(isOK)));
 end
 
