@@ -120,6 +120,11 @@ classdef GitMenu < handle
             %%%%    STASHED/RESET BRANCH MENU ITEM    %%%%
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%             
             
+            % creates the fetch remote menu item
+            frFcn = {@GitMenu.fetchRemote,obj};
+            uimenu(hMenuP,'Label','Fetch Remote','Callback',frFcn,...
+                          'Separator','on','tag','Fetch');
+            
             % creates the stashed branches menu item
             sbFcn = {@GitMenu.stashedBranches,obj};
             uimenu(hMenuP,'Label','Stashed Branches','Callback',sbFcn,...
@@ -137,12 +142,12 @@ classdef GitMenu < handle
             % creates the reference log menu item
             rlFcn = {@GitMenu.reflogBranch,obj};
             uimenu(hMenuI,'Label','Reference Log','Callback',rlFcn,...
-                          'Separator','off','tag','RefLog');                         
+                          'Separator','off','tag','RefLog');
                       
             % creates the reference log menu item
             rlFcn = {@GitMenu.branchInfo,obj};
             uimenu(hMenuI,'Label','Branch Information','Callback',rlFcn,...
-                          'Separator','off','tag','BranchInfo');                          
+                          'Separator','off','tag','BranchInfo');
                       
             % sets the menu items
             obj.hMenu = hMenu;
@@ -150,7 +155,7 @@ classdef GitMenu < handle
     end
     
     % class static methods
-    methods (Static)      
+    methods (Static)
         
         % --- branch hot-fix callback function
         function hotfixBranch(hMenu,~,obj)
@@ -282,8 +287,7 @@ classdef GitMenu < handle
             % from which the merge occured
             qStr = sprintf(['Do you want to delete the ',...
                             '"%s" branch?'],cBr);
-            uChoice = questdlg(qStr,'Delete Branch?',...
-                            'Yes','No','Yes');
+            uChoice = questdlg(qStr,'Delete Branch?','Yes','No','Yes');
             if strcmp(uChoice,'Yes')
                 % if so, then delete the branch
                 hMenuD = resetMenuItems('Delete Branch',cBr);
@@ -426,6 +430,20 @@ classdef GitMenu < handle
             delete(h)
         end     
         
+        % --- fetches the remote branches 
+        function fetchRemote(hMenu,~,obj)
+            
+            % creates a loadbar
+            h = ProgressLoadbar('Fetching Remote Repositories...');
+            
+            % performs the fetch operation
+            obj.GitFunc.gitCmd('fetch-origin');
+            
+            % closes the loadbar
+            delete(h)
+            
+        end
+        
         % --- stashed branches callback function
         function stashedBranches(hMenu,~,obj)
             
@@ -455,6 +473,7 @@ classdef GitMenu < handle
         
         % --- reset branch callback function        
         function resetBranch(hMenu,~,obj)
+            
             % confirms the user wants to reset to the detached point
             qStr = sprintf(['Are you certain you want to reset the ',...
                             'branch to the current point.\nNote ',...
@@ -515,7 +534,7 @@ classdef GitMenu < handle
         end
         
         % --- branch information callback function
-        function branchInfo(hMenu,~,obj)                    
+        function branchInfo(hMenu,~,obj)
             % runs the branch information GUI 
             GitBranchInfo(obj);                
         end

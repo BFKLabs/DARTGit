@@ -1,21 +1,22 @@
 classdef GitFunc
     % Class properties
     properties(Hidden)
-        tKey
         gDirP
         rType
         gName
         useKey
         uType
-        gRepo        
+        gRepo   
+        
+        % fixed fields
+        tKey = 'bea6406bc8bcc5e24e68c9889f108faf4eeff3b9';
+        tKeyU = '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';
     end
     
     % Class functions
     methods
         % --- class constructor
         function obj = GitFunc(rType,gDirP,gName)
-            % sets the token-keys
-            obj.tKey = 'bea6406bc8bcc5e24e68c9889f108faf4eeff3b9'; 
             
             % sets the object token key and user type
             obj.uType = obj.getUserType();              
@@ -41,16 +42,67 @@ classdef GitFunc
             % sets repository string
             obj.gRepo = sprintf('%s%s','@github.com/BFKLabs/',gRepo);                                                            
             
-            % sets/removes the origin URL dependent on user type
-            obj.gitCmd('rmv-origin')
-            if obj.uType == 0
-                % case is the user ia a developer
-                obj.gitCmd('set-origin')
-            else
-                % case is the user is a non-developer
+            % if user is a non-developer then remove non-master branches
+            if obj.uType ~= 0                
                 obj.rmvNonMasterBranches();
             end            
         end                                  
+        
+        % --- checks out a branch (either local, remote or version) 
+        %     add/removes any directories that are not part of current
+        function checkoutBranch(obj,chkType,chkData,chkID)
+            
+            % retrieves the commit ID of the new branch
+            switch chkType
+                case 'local' % case is checking out the local branch head 
+                    % retrieves the commit ID of the local branch
+                    nwID = obj.gitCmd('commit-id',chkData);
+
+                case 'remote' % case is checking out a remote branch
+%                     rmBr = sprintf('origin/%s',chkData);
+%                     if obj.uType > 0
+%                         obj.gitCmd('set-origin');
+%                     end
+% 
+%                     % retrieves all branches and determines if the input 
+%                     % branch is part of the remote branches
+%                     obj.gitCmd('fetch-origin')
+
+                    % retrieves the commit ID of the remote branch
+                    nwID = chkID;              
+
+                case 'version' % case is checking out branch version
+                    % input data is the commit ID
+                    nwID = chkData;
+
+            end
+
+            % adds/removes the directories between versions
+            cID = obj.gitCmd('commit-id');
+            obj.addRemoveDir(cID(1:length(nwID)),nwID)
+
+            % checks out the branch/version based on the type
+            switch chkType
+                case 'local' 
+                    % case is checking out the local branch head 
+                    obj.gitCmd('checkout-local',chkData);
+
+                case 'remote' 
+                    % case is checking out a remote branch
+                    obj.gitCmd('hard-reset',nwID,1);
+
+                    % removes the origin url (non-developers only) 
+                    if obj.uType > 0
+                        obj.gitCmd('rmv-origin');
+                    end                  
+
+                case 'version' 
+                    % case is checking out branch version
+                    obj.gitCmd('checkout-version',chkData);
+
+            end
+        
+        end        
         
         % --- deletes any local non-master branches 
         function rmvNonMasterBranches(obj)
@@ -61,12 +113,12 @@ classdef GitFunc
             
             % determines all non-master/local working branches
             notOK = ~(strcmp(lclBr0,'master') | ...
-                      startsWith(lclBr0,'LocalWorking'));
+                      startsWith(lclBr0,'LocalWorking') | ...
+                      strContains(lclBr0,'HEAD detached at'));
             
             % sets the non-master local branch names (and deletes them)
-            lclBr = lclBr0(notOK);
-            for i = 1:length(lclBr)
-                obj.gitCmd('delete-local',lclBr{i});
+            for i = find(notOK(:)')
+                obj.gitCmd('delete-local',lclBr0{i});
             end
             
         end
@@ -141,10 +193,10 @@ classdef GitFunc
         end        
         
         % --- retrieves the stash string for the current branch
-        function sStr = getStashBranchString(obj)
+        function sStr = getStashBranchString(obj,cBr)
             
             % retrieves the current branch and sets the stash string
-            cBr = obj.getCurrentBranch();
+            if ~exist('cBr','var'); cBr = obj.getCurrentBranch(); end
             sStr = sprintf('%s-stash',cBr);    
             
         end         
@@ -316,13 +368,13 @@ classdef GitFunc
                 isDetached = false;
             end
         end        
-        
+                        
         % --- add/removes the directories between versions from the 
         %     matlab path
         function addRemoveDir(obj,cID,nwID)
         
             % determines the difference between the 2 versions
-            if isequal(cID,nwID)
+            if startsWith(cID,nwID)
                 % if the version ID's are the same then exit the function
                 return
             else
@@ -422,14 +474,7 @@ classdef GitFunc
             isDC = cellfun(@(x)(startsWith(strtrim(x),'AA') || ...
                                 startsWith(strtrim(x),'UU') || ...
                                 startsWith(strtrim(x),'M')),brStatus);
-            if any(isDC)
-                % memory allocation
-                dcFiles = struct('Conflict',[],'Diff',[]);
-            else
-                % if there was no conflicted/merged files, then exit with
-                % an empty array
-                dcFiles = [];
-            end
+            dcFiles = struct('Conflict',[],'Diff',[]);
                             
             for i = find(isDC(:)')
                 % sets the file type/status
@@ -475,12 +520,22 @@ classdef GitFunc
         % --- resets the local/remote history (for the current branch to a
         %     certain commit ID (cID)
         function resetHistoryPoint(obj,cID)
+            
             % resets the commit to the specified commit point
-            h = ProgressLoadbar('Resetting Local/Remote Repositories...');
             obj.gitCmd('hard-reset',cID);     
-            obj.gitCmd('force-push-commit',cID);
-            delete(h)
+            obj.gitCmd('force-push',1);
+                        
         end
+        
+        % --- resets the local/remote history (for the current branch to a
+        %     certain commit ID (cID)
+        function resetLogPoint(obj,cID)
+            
+            % resets the commit to the specified commit point
+            obj.gitCmd('hard-reset',cID);     
+            obj.gitCmd('force-push',1);
+                        
+        end        
         
         % --- sets the origin user/password url
         function setOriginPW(obj)
@@ -510,6 +565,175 @@ classdef GitFunc
             
         end
         
+        % --- prompts the user what action they want to do take given
+        %     there is a change in the current branch
+        function uChoice = promptUserChange(obj)
+            
+            % sets the title/button strings
+            tStr = 'Code Changes Detected';
+            bStr = {'Commit','Stash','Ignore','View','Cancel'};
+            
+            if obj.uType > 0
+                % user is not a developer (not able to make commits/stash)
+                [i0,sStr] = deal(3,'Ignore');  
+                
+            else
+                % case is a developer, so determines if branch is detached
+                [~,isDetached] = obj.getCurrentBranch; 
+                if isDetached
+                    % if detached, then can only create a new branch
+                    bStr{2} = 'Create Branch';
+                    [i0,sStr] = deal(2,'Create a new ranch');                       
+                else
+                    % not detached so able to make commits
+                    [i0,sStr] = deal(1,'Commit, Stash');   
+                end
+            end
+            
+            % sets the button/message string
+            qStr = sprintf(['Changes have been detected on the ',...
+                            'current branch.\nDo you want to %s ',...
+                            'or Ignore these changes?'],sStr);
+            
+            % prompts the user for what action they wish to take
+            while 1
+                uChoice = QuestDlgMulti(bStr(i0:end),qStr,tStr);
+                if strcmp(uChoice,'View')
+                    % views the current changes on the branch
+                    waitfor(GitViewChanges(obj.GitFunc))
+                    
+                else
+                    % otherwise, exit the loop
+                    break
+                end
+            end
+            
+        end
+        
+        % --- sets up the commit information array
+        function cInfo = getAllCommitInfo(obj,pName,gpat)
+            
+            % initialisations
+            pat = '(?<=<).+?(?=>)';
+
+            % determines all the commit/merge commits
+            AC0 = obj.gitCmd('reflog-grep',pName,'commit:',gpat);
+            AM0 = obj.gitCmd('reflog-grep',pName,'commit (merge)',gpat);
+            AR0 = obj.gitCmd('reflog-grep',pName,'rebase',gpat);
+            
+            %
+            if isempty(AM0)
+                cInfo = [];
+                return
+            else
+                AM = strsplit(AM0,'\n')';
+                cInfoM0 = cellfun(@(x)(regexp(x,pat,'match')),AM,'un',0);
+                cInfoM = cell2cell(cInfoM0);
+            end
+            
+            % sets the final commit information
+            AC = strsplit(AC0,'\n')';            
+            cInfoC = cellfun(@(x)(regexp(x,pat,'match')),AC,'un',0);
+            cInfoT = [cell2cell(cInfoC);cInfoM];
+            
+            % removes any commits that are branch deletions
+            isOK = ~startsWith(cInfoT(:,end),'Branch Delete');
+            cInfo = cInfoT(isOK,:);            
+                
+        end
+        
+        % --- retrieves the branch information
+        function brInfo = getBranchInfo(obj,isAll)
+            
+            % sets the default input arguments
+            if ~exist('isAll','var'); isAll = false; end
+            
+            % retrieves the branch info
+            if isAll
+                % case is for all branches
+                brInfo0 = obj.gitCmd('branch-info',1);
+            else
+                % case is for local branches only
+                brInfo0 = obj.gitCmd('branch-info');
+            end
+            
+            % retrieves the non-detached branches
+            X = strsplit(brInfo0,'\n')';
+            X = X(~strContains(X,'HEAD detached'));
+            
+            %
+            brInfo = cell2cell(cellfun(@(x)(strsplit(x(3:end))),X,'un',0));
+        end
+        
+        % --- retrieves the information from the created branch
+        function crBr = getCreatedBranchInfo(obj)
+            
+            % initialisations
+            cStr = 'commit: 1st Commit (Branched from';
+            
+            % retrieves the branch deletion objects
+            crBrInfo0 = obj.gitCmd('reflog-grep','HEAD',cStr);   
+            if isempty(crBrInfo0)
+                crBr = [];
+                return
+            else
+                % otherwise, split the string into components
+                crBrInfo = strsplit(crBrInfo0,'\n')';                
+            end
+            
+            % retrieves the deleted commit ID information 
+            crBr = cell(length(crBrInfo),1);            
+            for i = 1:length(crBrInfo)
+                % splits the deletion branch information
+                crBrSp = regexp(crBrInfo{i},'\w+','match');
+                crBr{i,1} = crBrSp{1};
+            end
+            
+        end
+        
+        % --- retrieves the information about all deleted branches
+        function delBr = getDeletedBranchInfo(obj)
+            
+            % initialisations
+            cStr = 'commit: Branch Delete';
+            
+            % retrieves the branch deletion objects
+            delBrInfo0 = obj.gitCmd('reflog-grep','HEAD',cStr);            
+            if isempty(delBrInfo0)
+                delBr = [];
+                return
+            else
+                % otherwise, split the string into components
+                delBrInfo = strsplit(delBrInfo0,'\n');
+            end
+            
+            % retrieves the deleted commit ID information 
+            delBr = cell(length(delBrInfo),2);            
+            for i = 1:length(delBrInfo)
+                % splits the deletion branch information
+                iiR = regexp(delBrInfo{i},'\w+');                
+                xiCID0 = 1:(iiR(2)-2);
+                xiCID = iiR(end):(length(delBrInfo{i})-1);
+                
+                % sets the commit/deleted commit ID and message
+                delBr{i,1} = delBrInfo{i}(xiCID0);
+                delBr{i,2} = delBrInfo{i}(xiCID);             
+            end
+        end
+        
+        % --- resets the commit message from txt0 to txtNw
+        function resetCommitMessage(obj,txt0,txtNw,cBr,iCm)
+            
+            % sets the callback message strings
+            cbMsgStr = sprintf(['return message.replace(b''%s'','...
+                             'b''%s'')'],txt0,txtNw);
+            refStr = sprintf('--refs %s~%i..%s',cBr,iCm+1,cBr);
+            
+            % resets the commit message
+            obj.gitCmd('reset-commit-msg',cbMsgStr,refStr);
+            
+        end
+        
         % --- runs the git command (based on the type given by cStr)
         function varargout = gitCmd(obj,cStr,varargin)
             
@@ -526,6 +750,12 @@ classdef GitFunc
                     % command string is same as name as type string
                     gitCmdStr = cStr;
                
+                case 'reset-commit-msg'
+                    % case is resetting a commit message
+                    [cbMsgStr,refStr] = deal(varargin{1},varargin{2});
+                    gitCmdStr = sprintf(['filter-repo ',...
+                            '--message-callback "%s" %s'],cbMsgStr,refStr);
+                    
                 case 'diff-no-index'
                     % case is determining the difference between two files
                     % that aren't necessarily within the repo index
@@ -592,6 +822,8 @@ classdef GitFunc
                     %
                     brStr = varargin{1};
                     if length(varargin) == 1
+                        gitCmdStr = sprintf('switch %s',brStr);
+                    else
                         gitCmdStr = sprintf('switch -c %s',brStr);
                     end
                     
@@ -703,7 +935,7 @@ classdef GitFunc
                 case 'log-grep-all'
                     % phrase searches all branches
                     gStr = varargin{1};
-                    gitCmdStr = sprintf('log -g --grep="%s"',gStr);                    
+                    gitCmdStr = sprintf('log -g --grep="%s" --oneline',gStr);                    
                     
                 case 'head-branch'
                     % sets the git command string
@@ -741,6 +973,40 @@ classdef GitFunc
                     cBr = varargin{1};
                     gitCmdStr = sprintf('rev-list %s',cBr);
                     
+                    if length(varargin) == 2
+                        gitCmdStr = sprintf('%s --abbrev-commit',gitCmdStr);
+                    end
+                    
+                case 'revlist-grep'
+                    %
+                    [cID,gStr] = deal(varargin{1},varargin{2});
+                    gitCmdStr = sprintf(['rev-list %s ',...
+                                '--grep="%s" --oneline'],cID,gStr);                    
+                    
+                case 'reflog-grep'
+                    %
+                    [cBr,gStr] = deal(varargin{1},varargin{2});
+                    gitCmdStr = sprintf(['reflog %s ',...
+                                '--grep-reflog="%s" --oneline'],cBr,gStr);
+                            
+                    if length(varargin) == 3
+                        fStr = varargin{3};
+                        gitCmdStr = sprintf...
+                                    ('%s --format="%s"',gitCmdStr,fStr);
+                    end
+                    
+                case 'reflog-grep-since'
+                    % case is search the ref-log for a certain string
+                    % (starting from a time)
+                    [gStr,sDate] = deal(varargin{1},varargin{2});
+                    gitCmdStr = sprintf(['reflog --since="%s" ',...
+                            '--grep-reflog="%s" --oneline'],sDate,gStr);                            
+                            
+                case 'get-commit-parent'
+                    % retrieves the commit IDs for a given branch
+                    cBr = varargin{1};
+                    gitCmdStr = sprintf('rev-list --parents -n 1 %s',cBr);                    
+                    
                 case 'get-branch-commits'
                     % retrieves the commit string for the current branch
                     cBr = varargin{1};
@@ -756,10 +1022,17 @@ classdef GitFunc
                         gitCmdStr = sprintf('cherry -v %s',cBr);
                     end
                     
+                case 'compare-commit'
+                    % sets the input arguments
+                    [cID1,cID2] = deal(varargin{1},varargin{2});
+                    gitCmdStr = sprintf...
+                                ('cherry %s %s --abbrev=7',cID1,cID2);
+                    
                 case 'get-commit-date'
                     % retrieves the date stamp for a given commit
                     cID = varargin{1};
-                    gitCmdStr = sprintf('show -s --format=%s %s','%ai',cID);
+                    gitCmdStr = sprintf...
+                                ('show -s --format=%s %s','%ai',cID);
                     
                 case 'get-commit-comment'
                     % retrieves the date stamp for a given commit
@@ -834,8 +1107,22 @@ classdef GitFunc
                                         
                 case 'show-branches'
                     % retrieves all the repository branches
-                    gitCmdStr = 'show-branch';                          
+                    gitCmdStr = 'show-branch';    
+                    
+                case 'branch-info'
+                    % case is retrieving the information local branches 
+                    gitCmdStr = ['branch -v --format="%(HEAD) ',...
+                                 '%(refname:short) %(objectname:short)"'];
+                    if length(varargin) == 1
+                        % case is for all branches
+                        gitCmdStr = sprintf('%s --all',gitCmdStr);
+                    end
 
+                case 'diff-commit-stats'
+                    % case is the commit difference statistics
+                    [cID1,cID2] = deal(varargin{1},varargin{2});
+                    gitCmdStr = sprintf('diff --shortstat %s %s',cID1,cID2);
+                    
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                 %%%%    FILE CHECKOUT FUNCTIONS    %%%%
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  
@@ -857,7 +1144,13 @@ classdef GitFunc
                 case 'set-origin'
                     % sets the origin url
                     gitCmdStr = sprintf('remote add -f origin https://%s%s',...
-                                         obj.tKey,obj.gRepo);                    
+                                         obj.tKey,obj.gRepo);   
+                                                     
+                case 'set-origin-user'
+                    % sets the origin url
+                    gitCmdStr = sprintf('remote add -f origin https://%s%s',...
+                                         obj.tKeyU,obj.gRepo); 
+                                     
                     
                 case 'set-origin-pw'
                     % sets the origin url (setting password)
@@ -883,6 +1176,10 @@ classdef GitFunc
                         cID = varargin{1};
                         gitCmdStr = sprintf('fetch origin %s',cID);
                     end                                                        
+                    
+                case 'fetch-origin-prune'
+                    % fetches all branches from the origin
+                    gitCmdStr = 'fetch --prune origin';                     
                     
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                 %%%%    REPOSITORY COMMIT FUNCTIONS    %%%%
@@ -913,16 +1210,41 @@ classdef GitFunc
                         gitCmdStr = sprintf('rev-parse %s',chkBr);
                     end
 
+                case 'diff-file'
+                    % determines the file difference between 2 commits
+                    cID1 = varargin{1};
+                    
+                    if length(varargin) == 2
+                        fFile = varargin{2};
+                        gitCmdStr = sprintf('diff %s -- "%s"',...
+                                                        cID1,fFile);                        
+                    else
+                        [cID2,fFile] = deal(varargin{2},varargin{3});
+                        gitCmdStr = sprintf('diff %s..%s -- "%s"',...
+                                                        cID1,cID2,fFile);
+                    end
+                    
+                case 'status-short'
+                    %
+                    gitCmdStr = sprintf('status --short');
+                    
                 case 'diff-commit'
                     % determines the difference status between 2 commits
                     cID1 = varargin{1};
                     gitCmdStr = sprintf('diff --name-status %s %s',cID1);                    
                     
                 case 'diff-status'
-                    % determines the difference status between 2 commits
-                    [cID1,cID2] = deal(varargin{1},varargin{2});
-                    gitCmdStr = sprintf('diff --name-status %s %s',...
-                                                                cID1,cID2);
+                    % determines the difference status between commits
+                    cID1 = varargin{1};
+                    if length(varargin) == 1
+                        % case is checking current commit status
+                        gitCmdStr = sprintf('diff --name-status %s',cID1);                        
+                    else
+                        % case is comparing 2 commits
+                        cID2 = varargin{2};
+                        gitCmdStr = sprintf(...
+                                    'diff --name-status %s %s',cID1,cID2);
+                    end
                     
                 case 'commit-diff'
                     % retrieves the difference between 2 commits
@@ -1029,8 +1351,8 @@ classdef GitFunc
 
                 case 'create-local-detached'
                     % creates a local branch from a detached head
-                    nwBr = varargin{1};
-                    gitCmdStr = sprintf('checkout -b %s',nwBr);                                                                                
+                    [nwBr,cID0] = deal(varargin{1},varargin{2});
+                    gitCmdStr = sprintf('checkout -b %s %s',nwBr,cID0);                                                                                
                     
                 case 'checkout-local'
                     % checks out a local branch 
@@ -1058,7 +1380,19 @@ classdef GitFunc
                 case 'delete-local'
                     % deletes a local branch
                     brName = varargin{1};
-                    gitCmdStr = sprintf('branch -D %s',brName);                    
+                    if length(varargin) == 1
+                        % case is a force branch delete
+                        gitCmdStr = sprintf('branch -D %s',brName);
+                    else
+                        % case is the has merged flag is provided
+                        if varargin{2}
+                            % case is the branch has merged
+                            gitCmdStr = sprintf('branch -d %s',brName);
+                        else
+                            % case is the branch has not merged
+                            gitCmdStr = sprintf('branch -D %s',brName);
+                        end
+                    end
 
                 case 'checkout-version'
                     % checks out a version from a local branch
@@ -1103,6 +1437,21 @@ classdef GitFunc
                     % resets the author for a given commit
                     gitCmdStr = 'commit --amend --reset-author';
                     
+                case 'reset-commit-message'
+                    % resets the commit message
+                    mStr = varargin{1};
+                    gitCmdStr = sprintf('commit --amend -m "%s"',mStr);
+                    
+                case 'set-sequence-editor'
+                    % resets the sequence editor script string
+                    nwStr = varargin{1};
+                    
+                    
+                case 'reset-branch-name'
+                    % resets the commit message
+                    brStr = varargin{1};
+                    gitCmdStr = sprintf('branch -m "%s"',brStr);                    
+                    
                 case 'branch-head-commits'
                     % retrieves the head commits for each branch
                     if ~isempty(varargin)
@@ -1117,7 +1466,10 @@ classdef GitFunc
                             ['for-each-ref --format="%s(refname:short)',...
                              ' %s(objectname:short)" refs/heads'],'%','%');   
                     end
-                            
+                           
+                case 'branch-head-info'
+                    gitCmdStr = ['branch -v --format="%',...
+                          '(HEAD) %(refname:short) %(objectname:short)"'];
                     
                 case 'local-working-commits'
                     % retrieves the commits from the local working branch
@@ -1145,7 +1497,29 @@ classdef GitFunc
                 case 'remove-stale-final'
                     % removes any stale remote branches (final)      
                     gitCmdStr = 'remote prune origin';
+
+                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                %%%%    REBASE FUNCTIONS    %%%%
+                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                 
+                case 'rebase-interactive'
+                    % case is running the interactive rebase
+                    cID = varargin{1};
+                    if length(varargin) == 1
+                        gitCmdStr = sprintf('rebase -i %s',cID);
+                    else
+                        gitCmdStr = sprintf...
+                                        ('rebase -i --autosquash %s',cID);
+                    end
+                    
+                case 'rebase-abort'
+                    % case is aborting a rebase
+                    gitCmdStr = sprintf('rebase --abort');
+                    
+                case 'rebase-continue'
+                    % case is aborting a rebase
+                    gitCmdStr = sprintf('rebase --continue');                    
+                    
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                 %%%%    MERGE FUNCTIONS    %%%%
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1179,8 +1553,9 @@ classdef GitFunc
                 case 'unresolve-merge'
                     % case is unresolving a merge on a specific file
                     unFile = varargin{1};
-                    gitCmdStr = ...
-                        sprintf('update-index --unresolve "%s"',unFile);                    
+                    gitCmdStr = sprintf('checkout -m "%s"',unFile);
+%                     gitCmdStr = ...
+%                         sprintf('update-index --unresolve "%s"',unFile);                    
                     
                 case 'get-unmerged-files'
                     % case is determining the unmerged files
@@ -1201,6 +1576,16 @@ classdef GitFunc
                     gitCmdStr = sprintf(...
                         'difftool --no-index -- "%s" "%s"',dFile,dFileTmp);                                        
                     
+                case 'accept-ours'
+                    % case is accepting a file from the "ours" branch
+                    fName = varargin{1};
+                    gitCmdStr = sprintf('checkout --ours "%s"',fName);
+                    
+                case 'accept-theirs'
+                    % case is accepting a file from the "theirs" branch                    
+                    fName = varargin{1};
+                    gitCmdStr = sprintf('checkout --theirs "%s"',fName);
+                    
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                 %%%%    CONFIG FILE FUNCTIONS    %%%%
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1213,8 +1598,10 @@ classdef GitFunc
             end
             
             if ~isempty(gitCmdStr)
-                % runs the command string
+                % runs the command string                
+%                 tic
                 [status,gStr] = system(sprintf('git %s',gitCmdStr));
+%                 fprintf('Time = %.2f ("%s")\n',toc,gitCmdStr);
             end
                 
             % removes the origin url (if required)
@@ -1234,23 +1621,32 @@ classdef GitFunc
     
     % Private class functions
     methods(Access='private')
+        
         % retrieves the token key (depending on the user)
         function uType = getUserType(obj)
+            
             % retrieves the hostname of the computer
             [~,hName] = system('hostname');
             
             % sets the user type/token key string based on the computer
             switch hName(1:end-1)
-                case {'DESKTOP-94RD45L'} % case is a developer
+                case {'DESKTOP-94RD45L'} 
+                    % case is a developer
                     uType = 0;
-                    obj.gitCmd('rmv-origin')
-                    obj.gitCmd('set-origin')
+                    if isempty('get-origin')
+                        obj.gitCmd('set-origin')
+                    end                    
                     
-                otherwise % case is a basic program user
+                otherwise
+                    % case is a basic program user
                     uType = 1;
-                    obj.gitCmd('rmv-origin')
+                    if ~isempty('get-origin')
+                        obj.gitCmd('rmv-origin')
+                    end
                     
             end
-        end    
+            
+        end 
+        
     end
 end

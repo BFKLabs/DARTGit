@@ -19,7 +19,7 @@ classdef GitBranch < handle
             obj.hMain = hMain;
             obj.GitFunc = GitFunc;
             obj.GitMenu = GitMenu;
-            obj.pWordHF = 'BfkLabHF';    
+            obj.pWordHF = 'BfkLabHF';
             obj.mStr = {'Create','Merge','Change','Delete'};
             
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%            
@@ -194,7 +194,7 @@ classdef GitBranch < handle
                 % case is there is no issue
                 [mStr,tStr] = deal([]);                
             end
-        end            
+        end
         
         % --- creates a new hotifx branch using the data from iData
         function createNewHotfixBranch(obj,iData,h)
@@ -375,10 +375,8 @@ classdef GitBranch < handle
                 if ~isempty(hMenuM); delete(hMenuM); end
                 set(hMenu{2},'enable','off')
 
-                % updates the commit history details
-                if obj.GitFunc.uType == 0   
-                    obj.updateCommitHistoryInfo()
-                end
+                % updates the commit history details            
+                obj.updateCommitHistoryInfo()                
             end
             
             % deletes the loadbar
@@ -390,7 +388,6 @@ classdef GitBranch < handle
             
             % initialisations
             eStr = {'off','on'};
-            pBr = obj.getDeletedParentBranch(cID);
             
             % creates the load bar
             h = ProgressLoadbar('Restoring Deleted Branch...');                            
@@ -440,7 +437,7 @@ classdef GitBranch < handle
                 
                 % sets the other menu properties & enables parent menu item
                 set(hMenuNw,'Position',iPos,'Separator',eStr{1+isSep});                    
-                set(hMenu{i},'enable','on')                
+                setObjEnable(hMenu{i},1)                
             end       
             
             % creates the merge branch sub-menus                    
@@ -448,19 +445,7 @@ classdef GitBranch < handle
             
             % deletes the loadbar              
             delete(h)
-        end
-        
-        % --- create a remote branch, nwBr, from the parent branch, pBr
-        function createNewRemoteBranch(obj,pBr,nwBr)
             
-            if obj.GitFunc.uType > 0                              
-                % resets the origin url (if not a developer)
-                obj.GitFunc.gitCmd('rmv-origin');
-                obj.GitFunc.setOriginPW(); 
-            end
-
-            % creates the remote branch (from the original branch)
-            obj.GitFunc.gitCmd('push-remote-init',pBr,nwBr);                                                     
         end        
         
         % --- removes any remote stale branches 
@@ -1027,7 +1012,7 @@ classdef GitBranch < handle
                 if isDetached
                     % if detached, then can only create a new branch
                     bStr{2} = 'Create Branch';
-                    [i0,sStr] = deal(2,'Create Branch');                       
+                    [i0,sStr] = deal(2,'Create a new ranch');                       
                 else
                     % not detached so able to make commits
                     [i0,sStr] = deal(1,'Commit, Stash');   
