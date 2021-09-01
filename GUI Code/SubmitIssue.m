@@ -191,17 +191,14 @@ end
 % --- Executes on button press in checkNoLabelFilt.
 function checkNoLabelFilt_Callback(hObject, eventdata, handles)
 
-% initialisations
-eStr = {'off','on'};
-
 % retrieves the view status data struct
 vData = getappdata(handles.figSubmitIssue,'vData');
 vData.NoFilt = get(hObject,'value');
 setappdata(handles.figSubmitIssue,'vData',vData)
 
 % updates the label filter object properties
-set(handles.textLabelFilter,'enable',eStr{1+~vData.NoFilt})
-set(get(hObject,'UserData'),'Enabled',~vData.NoFilt)
+setObjEnable(handles.textLabelFilter,~vData.NoFilt)
+setObjEnable(get(hObject,'UserData'),~vData.NoFilt)
 
 % resets the update button enabled properties
 resetUpdateButtonProps(handles,vData)
@@ -367,9 +364,9 @@ end
 
 % disables the objects from the label panel properties
 isOK = ~isempty(ghData);
-set(handles.pushWebView,'enable',eStr{1+isOK})
-setPanelProps(handles.panelLabels,eStr{1+isOK})
-setPanelProps(handles.panelIssueDetails,eStr{1+isOK})
+setObjEnable(handles.pushWebView,isOK)
+setObjEnable(handles.panelLabels,isOK)
+setObjEnable(handles.panelIssueDetails,isOK)
 
 % deletes the loadbar (if it exists)
 if ~isempty(h); delete(h); end
@@ -457,27 +454,23 @@ set(handles.editIssueDesc,'KeyReleaseFcn',dCbFcn)
 function updateSubmitButtonProps(handles)
 
 % initialisations
-eStr = {'off','on'};
 sData = getappdata(handles.figSubmitIssue,'sData');
 
 % updates the button properties
 subData = {sData.Title,sData.Label,sData.Body};
 isOK = all(cellfun(@(x)(~isempty(x)),subData));
-set(handles.buttonSubmitIssue,'enable',eStr{1+isOK})
+setObjEnable(handles.buttonSubmitIssue,isOK)
 
 % --- resets the update button enabled properties
 function resetUpdateButtonProps(handles,vData)
 
-% initialisations
-eStr = {'off','on'};
-
 % sets the update button enabled properties
 if vData.NoFilt
     % if no label filter, then enable the update list button
-    set(handles.buttonUpdateList,'enable','on')
+    setObjEnable(handles.buttonUpdateList,'on')
 else
     % otherwise, set the enabled properties based on the label list
-    set(handles.buttonUpdateList,'enable',eStr{1+~isempty(vData.Label)})
+    setObjEnable(handles.buttonUpdateList,'enable',~isempty(vData.Label))
 end
 
 % --- initialises the issue submission data struct

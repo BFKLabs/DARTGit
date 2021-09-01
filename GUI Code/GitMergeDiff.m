@@ -19,7 +19,6 @@ else
 end
 % End initialization code - DO NOT EDIT
 
-
 % --- Executes just before GitMergeDiff is made visible.
 function GitMergeDiff_OpeningFcn(hObject, eventdata, handles, varargin)
 
@@ -34,24 +33,22 @@ handles.output = hObject;
 guidata(hObject, handles);
 
 % sets the input variables
-bObj = varargin{1};
+vObj = varargin{1};
 dcFiles = varargin{2};
 mBr = varargin{3};
 cBr = varargin{4};
-GF = varargin{5};
 
 % sets the input arguments into the GUI
-setappdata(hObject,'bObj',bObj)
+setappdata(hObject,'vObj',vObj)
 setappdata(hObject,'dcFiles',dcFiles)
 setappdata(hObject,'mBr',mBr)
 setappdata(hObject,'cBr',cBr)
-setappdata(hObject,'GitFunc',GF)
 setappdata(hObject,'iRow',NaN(1,2))
 setappdata(hObject,'cDir0',pwd)
 
 % initialises the GUI objects
-cd(GF.gDirP)
-initGUIObjects(handles,bObj,dcFiles,cBr)
+cd(vObj.gfObj.gDirP)
+initGUIObjects(handles)
 
 % UIWAIT makes GitMergeDiff wait for user response (see UIRESUME)
 uiwait(handles.figGitMergeDiff);
@@ -135,10 +132,10 @@ isUpdating = false;
 function buttonResolveConflict_Callback(hObject, eventdata, handles)
 
 % retrieves the important objects from the GUI
-GF = getappdata(handles.figGitMergeDiff,'GitFunc');
-bObj = getappdata(handles.figGitMergeDiff,'bObj');
-iRow = getappdata(handles.figGitMergeDiff,'iRow');
-dcFiles = getappdata(handles.figGitMergeDiff,'dcFiles');
+hFig = handles.figGitMergeDiff;
+vObj = getappdata(hFig,'vObj');
+iRow = getappdata(hFig,'iRow');
+dcFiles = getappdata(hFig,'dcFiles');
 
 % creates the loadbar
 h = ProgressLoadbar('Initiating Mergetool...');
@@ -148,15 +145,15 @@ cFile = dcFiles.Conflict(iRow(1));
 mcFile = getFullFileName(cFile);
 
 % runs the mergetool on the file
-set(handles.figGitMergeDiff,'visible','off')
-bObj.GitFunc.gitCmd('run-mergetool',mcFile);
-set(handles.figGitMergeDiff,'visible','on')
+setObjVisibility(hFig,0)
+vObj.gfObj.gitCmd('run-mergetool',mcFile);
+setObjVisibility(hFig,1)
 
 % deletes the loadbar
 delete(h)
 
 % determines if the merge conflict resolution was successful
-fFile = fullfile(GF.gDirP,mcFile);
+fFile = fullfile(vObj.gfObj.gDirP,mcFile);
 if strContains(fileread(fFile),'<<<< HEAD')
     % if the merge conflict was not resolved correctly, then output an
     % error message to screen
@@ -165,7 +162,7 @@ if strContains(fileread(fFile),'<<<< HEAD')
     waitfor(errordlg(eStr,'Conflict Not Resolved!','modal'))
     
     % un-resolves the merge and exits the function
-    bObj.GitFunc.gitCmd('unresolve-merge',mcFile)
+    vObj.gfObj.gitCmd('unresolve-merge',mcFile)
     return
 end
 
@@ -190,31 +187,33 @@ if ~ischar(eventdata)
 end
     
 % retrieves the important objects from the GUI
-bObj = getappdata(handles.figGitMergeDiff,'bObj');
-iRow = getappdata(handles.figGitMergeDiff,'iRow');
-dcFiles = getappdata(handles.figGitMergeDiff,'dcFiles');
+hFig = handles.figGitMergeDiff;
+vObj = getappdata(hFig,'vObj');
+iRow = getappdata(hFig,'iRow');
+dcFiles = getappdata(hFig,'dcFiles');
 
 % determines the merge conflict file to be reverted
 cFile = dcFiles.Conflict(iRow(1));
 mcFile = getFullFileName(cFile);
 
 % un-resolves the merge and exits the function
-bObj.GitFunc.gitCmd('unresolve-merge',mcFile)
+vObj.gfObj.gitCmd('unresolve-merge',mcFile)
 
 % updates the table indicating the difference has been resolved
 updateTableFlag(handles.tableConflict,iRow(1),false)
 
 % disables/enables the resolve/revert buttons
 resetButtonProps(hObject,handles.buttonResolveConflict)
-set(handles.buttonCont,'enable','off')
+setObjEnable(handles.buttonCont,0)
 
 % --- Executes on button press in buttonResolveDiff.
 function buttonResolveDiff_Callback(hObject, eventdata, handles)
 
 % retrieves the important objects from the GUI
-bObj = getappdata(handles.figGitMergeDiff,'bObj');
-iRow = getappdata(handles.figGitMergeDiff,'iRow');
-dcFiles = getappdata(handles.figGitMergeDiff,'dcFiles');
+hFig = handles.figGitMergeDiff;
+vObj = getappdata(hFig,'vObj');
+iRow = getappdata(hFig,'iRow');
+dcFiles = getappdata(hFig,'dcFiles');
 
 % creates the loadbar
 h = ProgressLoadbar('Initiating Difftool...');
@@ -225,15 +224,15 @@ mdFile = getFullFileName(dFile);
 mdFileTmp = getTempDiffFileName(dFile);
 
 % runs the difftool on the file
-set(handles.figGitMergeDiff,'visible','off')
-bObj.GitFunc.gitCmd('run-difftool',mdFile,mdFileTmp);
-set(handles.figGitMergeDiff,'visible','on')
+setObjVisibility(hFig,0)
+vObj.gfObj.gitCmd('run-difftool',mdFile,mdFileTmp);
+setObjVisibility(hFig,1)
 
 % deletes the loadbar
 delete(h)
 
 % updates the table indicating if the difference has been resolved
-dStr = bObj.GitFunc.gitCmd('diff-no-index',mdFile,mdFileTmp);
+dStr = vObj.gfObj.gitCmd('diff-no-index',mdFile,mdFileTmp);
 if ~isempty(dStr)
     % determines if the 
     dStr = strsplit(dStr,'\n');
@@ -263,24 +262,25 @@ if ~ischar(eventdata)
 end
 
 % retrieves the important objects from the GUI
-mBr = getappdata(handles.figGitMergeDiff,'mBr');
-bObj = getappdata(handles.figGitMergeDiff,'bObj');
-iRow = getappdata(handles.figGitMergeDiff,'iRow');
-dcFiles = getappdata(handles.figGitMergeDiff,'dcFiles');
+hFig = handles.figGitMergeDiff;
+mBr = getappdata(hFig,'mBr');
+vObj = getappdata(hFig,'vObj');
+iRow = getappdata(hFig,'iRow');
+dcFiles = getappdata(hFig,'dcFiles');
 
 % determines the merge conflict file to be resolved
 dFile = dcFiles.Diff(iRow(2));
 mdFile = getFullFileName(dFile);
 
 % reverts the merge difference file back to original
-bObj.GitFunc.gitCmd('checkout-branch-file',mBr,mdFile);
+vObj.gfObj.gitCmd('checkout-branch-file',mBr,mdFile);
 
 % updates the table indicating the difference has been resolved
 updateTableFlag(handles.tableDiff,iRow(2),false)
 
 % disables/enables the resolve/revert buttons
 resetButtonProps(hObject,handles.buttonResolveDiff)
-set(handles.buttonCont,'enable','off')
+setObjEnable(handles.buttonCont,0)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%    OTHER CONTROL BUTTON FUNCTIONS    %%%%
@@ -311,43 +311,44 @@ if ~strcmp(uChoice,'Yes')
 end
 
 % makes the GUI invisible
-set(handles.figGitMergeDiff,'visible','off')
+hFig = handles.figGitMergeDiff;
+iRow = getappdata(hFig,'iRow');
+hButRevD = handles.buttonRevertDiff;
+hButRevC = handles.buttonRevertConflict;
 
-% sets the table 
-iRow = getappdata(handles.figGitMergeDiff,'iRow');
-hTable = {handles.tableConflict,handles.tableDiff};
+% sets the figure to be invisible
+setObjVisibility(hFig,0)
 
 % reverts any files that have been altered
+hTable = {handles.tableConflict,handles.tableDiff};
 for i = 1:length(hTable)
     % retrieves the table data
     Data = get(hTable{i},'Data');
     for j = 1:size(Data,1)
-        if (~isempty(Data{j,1}) && Data{j,2})
+        if ~isempty(Data{j,1}) && Data{j,3}
             % updates the row index
             iRow(i) = j;
-            setappdata(handles.figGitMergeDiff,'iRow',iRow);
+            setappdata(hFig,'iRow',iRow);
             
             % runs the revert function (depending on the type)
             if i == 1
                 % case is reverting the conflict merge 
-                buttonRevertConflict_Callback(...
-                            handles.buttonRevertConflict, '1', handles)
+                buttonRevertConflict_Callback(hButRevC,'1',handles)
             else
                 % case is reverting the file difference
-                buttonRevertDiff_Callback(...
-                            handles.buttonRevertDiff, '1', handles)                
+                buttonRevertDiff_Callback(hButRevD,'1',handles)                
             end
         end
     end
 end
 
 % changes the directory back to the original
-cDir0 = getappdata(handles.figGitMergeDiff,'cDir0');
+cDir0 = getappdata(hFig,'cDir0');
 cd(cDir0);
 
 % removes the temporary directory and closes the GUI
 tmpDirFunc('remove')
-delete(handles.figGitMergeDiff)
+delete(hFig)
 
 %-------------------------------------------------------------------------%
 %                             OTHER FUNCTIONS                             %
@@ -358,14 +359,22 @@ delete(handles.figGitMergeDiff)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % --- initialises the GUI objects
-function initGUIObjects(handles,bObj,dcFiles,cBr)
+function initGUIObjects(handles)
 
-% parameters
+% field retrieval
+hFig = handles.figGitMergeDiff;
+cBr = getappdata(hFig,'cBr');
+mBr = getappdata(hFig,'mBr');
+vObj = getappdata(hFig,'vObj');
+dcFiles = getappdata(hFig,'dcFiles');
+
+% other initialisations
+fStr = fieldnames(dcFiles);
 [dX,hasEmpty] = deal(10,false);
 
-% retrieves the conflict/difference struct fields
-fStr = fieldnames(dcFiles);
-cStr = {'File Names','Resolved?'};
+% sets the table column format strings
+rType = {'Custom Resolve',sprintf('Use "%s"',mBr),sprintf('Use "%s"',cBr)};
+cForm = {'char',rType,'logical'};
 
 % if there are difference files, then copy them to a temporary directory
 if ~isempty(dcFiles.Diff)
@@ -379,7 +388,7 @@ if ~isempty(dcFiles.Diff)
         dFileOut = getTempDiffFileName(dcFiles.Diff(i));
         
         % outputs the file from the merging branch to the temp directory
-        bObj.GitFunc.gitCmd('checkout-to-location',cBr,dFile,dFileOut);
+        vObj.gfObj.gitCmd('checkout-to-location',cBr,dFile,dFileOut);
     end
 end
 
@@ -389,21 +398,21 @@ hTable = cell(length(fStr),1);
 % initialises the table data for the merge conflict/difference files
 for i = 1:length(fStr)
     % retrieves the corresponding data struct field
-    dcStr = eval(sprintf('dcFiles.%s',fStr{i}));
+    dcStr = getStructField(dcFiles,fStr{i});
     
     % retrieves the corresponding panel/table object handles
     hPanel = eval(sprintf('handles.panel%s',fStr{i}));
-    hTable{i} = eval(sprintf('handles.table%s',fStr{i}));
-    
-    % sets the column names
-    set(hTable{i},'ColumnName',cStr)
+    hTable{i} = eval(sprintf('handles.table%s',fStr{i}));   
     
     % sets the table (if any exists)
     nFld = length(dcStr);
     if nFld > 0
         % if there are valid fields, then update the table
-        tData = [field2cell(dcStr,'Name'),num2cell(false(nFld,1))];
-        set(hTable{i},'Data',tData)
+        fName = field2cell(dcStr,'Name');
+        iInd = ones(nFld,1);
+        isOK = num2cell(false(nFld,1));        
+        set(hTable{i},'Data',[fName,cForm{2}(iInd),isOK],...
+                      'ColumnFormat',cForm)
         autoResizeTableColumns(hTable{i})
         
         % if the other panel is empty, 
@@ -412,20 +421,20 @@ for i = 1:length(fStr)
         end
     else
         % otherwise, make the panel invisible and sets an empty table         
-        set(hPanel,'visible','off')  
+        setObjVisibility(hPanel,0)  
         set(hTable{i},'Data',{'',true});             
         
         % resets the position of the control buttons panel and figure width
         [pPos,hasEmpty] = deal(get(hPanel,'position'),true);
         resetObjPos(handles.panelContButtons,'left',dX)     
-        resetObjPos(handles.figGitMergeDiff,'width',-(pPos(3)+dX),1);  
+        resetObjPos(hFig,'width',-(pPos(3)+dX),1);  
     end
 end
 
 % disables all push-buttons (except the cancel button)
-hBut = findall(handles.figGitMergeDiff,'style','pushbutton');
-set(hBut,'enable','off')
-set(handles.buttonCancel,'enable','on')
+hBut = findall(hFig,'style','pushbutton');
+setObjEnable(hBut,0)
+setObjEnable(handles.buttonCancel,1)
 
 % --- updates the properties when selecting a table row
 function updateSelectionProperties(hTable,iRowSel,iTable)
@@ -444,15 +453,8 @@ selectTableRow(hTable,iRowSel)
 % sets the enabled properties of the control buttons depending on whether
 % the conflict/difference has been resolved or not
 Data = get(hTable,'Data');
-if Data{iRowSel,2}
-    % case is disabling/enabling resolve/revert buttons
-    set(hButRes,'enable','off')
-    set(hButRev,'enable','on')
-else
-    % case is enabling/disabling resolve/revert buttons
-    set(hButRes,'enable','on')
-    set(hButRev,'enable','off')
-end
+setObjEnable(hButRev,Data{iRowSel,3})
+setObjEnable(hButRes,~Data{iRowSel,3})
 
 % updates the selected row in the selection array
 iRow = getappdata(gcf,'iRow');
@@ -462,9 +464,6 @@ setappdata(gcf,'iRow',iRow)
 % --- determines if the user can continue (only when all
 %     conflicts/differences have been resolved)
 function setContButtonProps(handles)
-
-% initialisations
-eStr = {'off','on'};
 
 % retrieves the data from both tables
 tDataM = get(handles.tableConflict,'Data');
@@ -483,14 +482,14 @@ else
 end
 
 % updates the enabled properties of the continue button
-set(handles.buttonCont,'enable',eStr{1+canCont})
+setObjEnable(handles.buttonCont,canCont)
 
 % --- disables/enables the corresponding control buttons
 function resetButtonProps(hOff,hOn)
 
 % disables/enables the corresponding buttons
-set(hOff,'enable','off')
-set(hOn,'enable','on')
+setObjEnable(hOn,1)
+setObjEnable(hOff,0)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%    TABLE UPDATE FUNCTIONS    %%%%
@@ -508,17 +507,12 @@ if isempty(jTable)
     setappdata(hTable,'jTable',jTable)
 end
 
-% selects the entire rowclc
-jTable.changeSelection(iRowSel-1,0,0,0)
-jTable.changeSelection(iRowSel-1,1,0,1)
-pause(0.05)
-
 % --- updates the resolved flag within a given table (on a specific row)
 function updateTableFlag(hTable,iRow,tVal)
 
 % updates the table value
 tData = get(hTable,'Data');
-tData{iRow,2} = tVal;
+tData{iRow,3} = tVal;
 set(hTable,'Data',tData)
 
 % reselects the row of the table

@@ -26,12 +26,13 @@ function RefLogPara_OpeningFcn(hObject, eventdata, handles, varargin)
 handles.output = hObject;
 
 % retrieves the main GUI handle
-[mObj,hRL,cBr] = deal(varargin{1},varargin{2},varargin{3});
+[vObj,hFigM] = deal(varargin{1},varargin{2});
+cBr = vObj.getCurrentBranchName();
 
 % sets the input parameters
-setappdata(hObject,'mObj',mObj)
-setappdata(hObject,'hRL',hRL)
 setappdata(hObject,'cBr',cBr)
+setappdata(hObject,'vObj',vObj)
+setappdata(hObject,'hFigM',hFigM)
 setappdata(hObject,'rlData',initRefLogPara(cBr))
 
 % sets the function handles into the GUI
@@ -197,8 +198,8 @@ set(hObject,'enable','off')
 function initGUIObjects(handles)
 
 % retrieves the reference log parameter struct
-cBr = getappdata(handles.figRefLogPara,'cBr');
-rlData = getappdata(handles.figRefLogPara,'rlData');
+hFig = handles.figRefLogPara;
+rlData = getappdata(hFig,'rlData');
 dYear = str2double(datestr(datenum(datestr(now)),'yyyy'));
 
 % sets the selected radio button
@@ -208,7 +209,7 @@ set(hRadio,'Value',1)
 panelHistVer_SelectionChangedFcn(handles.panelHistVer, '1', handles)                   
 
 % disables the update history parameter button
-set(handles.buttonUpdateHist,'enable','off')
+setObjEnable(handles.buttonUpdateHist,0)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%    HISTORY VERSION PANEL OBJECTS    %%%%
@@ -222,8 +223,7 @@ hPopup = findall(handles.panelFiltDate,'style','popupmenu');
 for i = 1:length(hPopup)
     % sets the callback function
     hObj = hPopup(i);
-    bFunc = @(hObj,e)RefLogPara('updateDateFilter',hObj,[],guidata(hObj));
-    set(hObj,'Callback',bFunc)
+    set(hObj,'Callback',@updateDateFilter)
     
     % determines if the popup menu object is before
     [isBefore,dType] = getSelectedPopupType(hObj);      
@@ -287,71 +287,80 @@ function updateRefLogTable(handles)
 
 % initialisations
 hFig = handles.figRefLogPara;
-hRL = getappdata(hFig,'hRL');
-mObj = getappdata(hFig,'mObj');
+vObj = getappdata(hFig,'vObj');
+hFigM = getappdata(hFig,'hFigM');
 rlData = getappdata(hFig,'rlData');
 
 % creates the reference log explorer tree
-createRefLogExplorerTable(guidata(hRL),mObj.GitFunc,rlData);
+hGUIM = guidata(hFigM);
+createRefLogExplorerTable(hGUIM);
 
 % sets the reference log GUI properties
-hRLH = guidata(hRL);
-setappdata(hRL,'iRow',1)
-set(hRLH.textCurrSel,'string','Row #1')
-set(hRLH.menuResetHist,'enable','off')
+setappdata(hFigM,'iRow',1)
+set(hGUIM.textCurrSel,'string','N/A','enable','off')
+set(hGUIM.textCurrSelL,'enable','off')
+set(hGUIM.menuResetHist,'enable','off')
 
 % --- creates the GitVersion explorer tree
-function createRefLogExplorerTable(handles,GF,rfData)
+function createRefLogExplorerTable(handles)
 
-%
+% object retrieval
+hFig = handles.figRefLog;
+hTable = handles.tableRefLog;
+vObj = getappdata(hFig,'vObj');
+
+% other initialisations
+bgCol = [];
+cWid = {90,150,500};
+gpat = '<%h> <%as> <%s> <%at>';
+colStr = {'Commit ID','Action Type','Reference Message'};
+
+% retrieves the table data
 Data = get(handles.tableRefLog,'Data');
 if ~isempty(Data)
-    set(handles.tableRefLog,'Data',[])
+    % if there is data, then reset the table
+    set(hTable,'Data',[])
 end
 
 % creates the loadbar
 h = ProgressLoadbar('Updating Reference Log Table...');
 
-% retrieves the reference log strings
-switch (rfData.hType)
-    case (1) % case is using all history entries
-        rfStr0 = GF.gitCmd('reflog-branch',rfData.bType);
-        
-    case (2) % case is using last history n-entries
-        rfStr0 = GF.gitCmd('reflog-branch',rfData.bType,rfData.nHist);
-        
-    case (3) % case is using date filter
-        D0 = getDateStr(rfData.dNum0);
-        D1 = getDateStr(rfData.dNum1);
-        rfStr0 = GF.gitCmd('reflog-branch',rfData.bType,D0,D1);
-end
+% determines the matching commit group for each branch, and determines the
+% grouping that belongs to the current branch
+brGrp = groupCommitID(vObj.gfObj);
+iBr = vObj.getCurrentHeadInfo();
+indM = cellfun(@(x)(any(strcmp(x,vObj.rObj.brData{iBr,2}))),brGrp);
 
-% splits the log string into separate lines
-rfStr = strsplit(rfStr0,'\n')';
-if startsWith(rfStr{1},'warning')
-    % removes any warning lines
-    rfStr = rfStr(2:end);
-end
+% retireves all info from the head commits reflog
+tData = vObj.gfObj.getAllCommitInfo('HEAD',gpat);
 
 % retrieves the reference log commit IDs
-rfCID = cellfun(@(x)(x{1}),cellfun(@(x)(...
-                       strsplit(x)),rfStr(:),'un',0),'un',0);
-                   
-% sets up the reference log action/message array                  
-rfMsg0 = cellfun(@(x)(x{2}),cellfun(@(x)(...
-                regexp(x,'}: ','split')),rfStr(:),'un',0),'un',0);
-rfMsg = cellfun(@(x)(regexp(x,': ','split','once')),rfMsg0(:),'un',0);
+if ~isempty(tData)
+    % if there is data, then sort by date
+    if any(indM)
+        ii = cellfun(@(x)(find(strcmp(tData(:,1),x))),brGrp{indM});
+        tData = tData(ii,:);
+        [~,iS] = sort(cellfun(@str2double,tData(:,end)),'descend');
+        tData = tData(iS,1:3);
 
-% any references with no messages are expanded to fit the table structure
-ii = cellfun(@length,rfMsg)~=2;            
-rfMsg(ii) = cellfun(@(x)({x{1},''}),rfMsg(ii),'un',0);
+        % sets the table background colour
+        bgCol = ones(size(tData,1),3);
+        headID = vObj.rObj.gHist(iBr).brInfo.CID{1};
+        bgCol(strcmp(tData(:,1),headID),:) = [1,0.5,0.5];
+    else
+        % otherwise reduce the arrays
+        tData = tData(:,1:3);
+    end
+end
                     
 % updates the table and resizes
-colStr = {'Commit ID','Action Type','Reference Message'};
-set(handles.tableRefLog,'Data',[rfCID,cell2cell(rfMsg)],...
-                        'ColumnName',colStr,...
-                        'ColumnWidth',{90,150,500})
-autoResizeTableColumns(handles.tableRefLog);        
+set(hTable,'Data',tData,'ColumnName',colStr,'ColumnWidth',cWid)
+if ~isempty(bgCol)
+    set(hTable,'BackgroundColor',bgCol)   
+end
+
+% automatically resizes the table columns                    
+autoResizeTableColumns(hTable);        
 
 % deletes the loadbar
 delete(h)

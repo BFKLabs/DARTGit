@@ -26,17 +26,17 @@ function GitHotfix_OpeningFcn(hObject, eventdata, handles, varargin)
 handles.output = hObject;
 
 % sets the input arguments into the GUI
-GitMenu = varargin{1};
+vObj = varargin{1};
 
 % opens the loadbar figure
 h = ProgressLoadbar('Initialising Hot-Fix Branch Information...');
 
 % sets the important structs into the GUI
 setappdata(hObject,'iData',initDataStruct)
-setappdata(hObject,'GitMenu',GitMenu)
+setappdata(hObject,'vObj',vObj)
 
 % initialises the GUI object properties
-initGUIObjects(handles, GitMenu)
+initGUIObjects(handles,vObj)
 
 % closes the loadbar figure
 delete(h)
@@ -83,8 +83,9 @@ end
 function editBranchName_Callback(hObject, eventdata, handles)
 
 % retrieves the data struct
-hfBr = getappdata(handles.figGitHotfix,'hfBr');
-iData = getappdata(handles.figGitHotfix,'iData');
+hFig = handles.figGitHotfix;
+hfBr = getappdata(hFig,'hfBr');
+iData = getappdata(hFig,'iData');
 
 % retrieves the new string and checks to see if it is valid
 nwStr = get(hObject,'string');
@@ -93,7 +94,7 @@ if isempty(nwStr); return; end
 % determines if the string is valid
 [ok,mStr] = chkDirString(nwStr,1);
 if ok 
-    if (strcmp(nwStr(1),'.') || strcmp(nwStr(1),'-'))
+    if strcmp(nwStr(1),'.') || strcmp(nwStr(1),'-')
         % if valid, but starts with ".", then set an error message
         ok = 0;
         mStr = 'Error! Branch string can''t start with "." or "-".';
@@ -111,7 +112,7 @@ end
 if ok
     % updates the branch name string
     iData.bName = nwStr;
-    setappdata(handles.figGitHotfix,'iData',iData);
+    setappdata(hFig,'iData',iData);
 else
     % otherwise, output the error and revert back to the last valid value
     waitfor(errordlg(mStr,'Branch Name Error','modal'))
@@ -125,7 +126,8 @@ setEnableProps(handles)
 function editUserName_Callback(hObject, eventdata, handles)
 
 % retrieves the data struct
-iData = getappdata(handles.figGitHotfix,'iData');
+hFig = handles.figGitHotfix;
+iData = getappdata(hFig,'iData');
 
 % retrieves the new string and checks to see if it is valid
 nwStr = get(hObject,'string');
@@ -138,7 +140,7 @@ if isempty(nwStr); return; end
 if ok
     % updates the branch name string
     iData.uName = nwStr;
-    setappdata(handles.figGitHotfix,'iData',iData);
+    setappdata(hFig,'iData',iData);
 else
     % otherwise, output the error and revert back to the last valid value
     waitfor(errordlg(mStr,'Branch Name Error','modal'))
@@ -153,7 +155,8 @@ function editPassword_KeyPressFcn(hObject, eventdata, handles)
 
 % retrieves the data struct
 jEdit = findjobj(hObject);
-iData = getappdata(handles.figGitHotfix,'iData');
+hFig = handles.figGitHotfix;
+iData = getappdata(hFig,'iData');
 
 % if not a valid character, then exit the function
 switch eventdata.Key
@@ -195,16 +198,19 @@ jEdit.setCaretPosition(length(iData.pWordHF))
 jEdit.repaint()
 
 % updates the data struct into the GUI
-setappdata(handles.figGitHotfix,'iData',iData)
+setappdata(hFig,'iData',iData)
 setEnableProps(handles)
 
 % --- Executes on updating editCommitMsg.
 function editCommitMsg_Callback(hObject, eventdata, handles)
 
+% initialisations
+hFig = handles.figGitHotfix;
+
 % updates the commit message string
-iData = getappdata(handles.figGitHotfix,'iData');
+iData = getappdata(hFig,'iData');
 iData.cMsg = get(hObject,'string');
-setappdata(handles.figGitHotfix,'iData',iData);
+setappdata(hFig,'iData',iData);
 
 % updates the enabled properties
 setEnableProps(handles)
@@ -220,18 +226,19 @@ function pushCreate_Callback(hObject, eventdata, handles)
 global iData
 
 % retrieves the important objects from the GUI
-iData = getappdata(handles.figGitHotfix,'iData');
-GM = getappdata(handles.figGitHotfix,'GitMenu');
+hFig = handles.figGitHotfix;
+vObj = getappdata(hFig,'vObj');
+iData = getappdata(hFig,'iData');
 
-% checks the password/brnac
-[mStr,tStr] = GM.GitBranch.checkBranchData(iData);
+% checks the password/branch
+[mStr,tStr] = vObj.checkBranchData(iData);
 if isempty(mStr)
     % otherwise, delete the GUI
-    delete(handles.figGitHotfix)    
+    delete(hFig)    
 else
     % if incorrect, then output a message to screen
     waitfor(msgbox(mStr,tStr,'modal'))    
-    figure(handles.figGitHotfix)
+    figure(hFig)
 end
 
 % --- Executes on button press in pushCancel.
@@ -249,17 +256,17 @@ delete(handles.figGitHotfix)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % --- initialises the GUI objects
-function initGUIObjects(handles,GitMenu)
+function initGUIObjects(handles,vObj)
 
 % initialisations
 hfBr = [];
-GF = GitMenu.GitFunc;
-iData = getappdata(handles.figGitHotfix,'iData');
+hFig = handles.figGitHotfix;
+iData = getappdata(hFig,'iData');
 
 % retrieves the remote branch strings
-GF.gitCmd('set-origin');
-rmBr = strsplit(GF.gitCmd('branch-remote'),'\n');
-GF.gitCmd('rmv-origin');
+vObj.gfObj.gitCmd('set-origin');
+rmBr = strsplit(vObj.gfObj.gitCmd('branch-remote'),'\n');
+vObj.gfObj.gitCmd('rmv-origin');
 
 % determines which of the remote branches are hot-fix branches
 isHF = strContains(rmBr,'hotfix');
@@ -271,10 +278,10 @@ end
 % updates the hot-fix branch names/commit message into the gui
 set(handles.listHFBranches,'string',hfBr)
 set(handles.editCommitMsg,'string',iData.cMsg)
-setappdata(handles.figGitHotfix,'hfBr',hfBr)
+setappdata(hFig,'hfBr',hfBr)
 
 % disables the creation button
-set(handles.pushCreate,'enable','off')
+setObjEnable(handles.pushCreate,0)
 
 % --- sets the enabled properties
 function setEnableProps(handles)

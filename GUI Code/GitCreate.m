@@ -26,14 +26,14 @@ function GitCreate_OpeningFcn(hObject, eventdata, handles, varargin)
 handles.output = hObject;
 
 % sets the input arguments into the GUI
-GitMenu = varargin{1};
-setappdata(hObject,'GitMenu',GitMenu)
+vObj = varargin{1};
 
 % sets the important structs into the GUI
+setappdata(hObject,'vObj',vObj)
 setappdata(hObject,'iData',initDataStruct())
 
 % initialises the GUI object properties
-initGUIObjects(handles,GitMenu)
+initGUIObjects(handles)
 
 % Update handles structure
 guidata(hObject, handles);
@@ -102,7 +102,8 @@ updateParentBranches(handles)
 function editBranchName_Callback(hObject, eventdata, handles)
 
 % retrieves the data struct
-iData = getappdata(handles.figGitCreate,'iData');
+hFig = handles.figGitCreate;
+iData = getappdata(hFig,'iData');
 
 % retrieves the new string and checks to see if it is valid
 nwStr = get(hObject,'string');
@@ -120,7 +121,7 @@ end
 if ok
     % updates the branch name string
     iData.bName = nwStr;
-    setappdata(handles.figGitCreate,'iData',iData);
+    setappdata(hFig,'iData',iData);
 else
     % otherwise, output the error and revert back to the last valid value
     waitfor(errordlg(mStr,'Branch Name Error','modal'))
@@ -128,9 +129,8 @@ else
 end
 
 % updates the enabled properties
-eStr = {'off','on'};
 set(hObject,'string',iData.bName)
-set(handles.pushCreate,'enable',eStr{1+~isempty(iData.bName)})
+setObjEnable(handles.pushCreate,~isempty(iData.bName))
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%    CONTROL BUTTON CALLBACKS    %%%%
@@ -143,18 +143,19 @@ function pushCreate_Callback(hObject, eventdata, handles)
 global iData
 
 % resets the data struct and deletes the GUI
-iData = getappdata(handles.figGitCreate,'iData');
-GM = getappdata(handles.figGitCreate,'GitMenu');
+hFig = handles.figGitCreate;
+vObj = getappdata(hFig,'vObj');
+iData = getappdata(hFig,'iData');
 
 % checks the password/brnac
-[mStr,tStr] = GM.GitBranch.checkBranchData(iData);
+[mStr,tStr] = vObj.checkBranchData(iData);
 if isempty(mStr)
     % otherwise, delete the GUI
-    delete(handles.figGitCreate)    
+    delete(hFig)    
 else
     % if incorrect, then output a message to screen
     waitfor(msgbox(mStr,tStr,'modal'))    
-    figure(handles.figGitCreate)
+    figure(hFig)
 end
 
 % --- Executes on button press in pushCancel.
@@ -172,14 +173,17 @@ delete(handles.figGitCreate)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % --- initialises the GUI objects
-function initGUIObjects(handles,GitMenu)
-
-% retrieves the branch group types
-bGrpType = GitMenu.GitBranch.bGrpType;
-[cBr,isDetached] = GitMenu.GitFunc.getCurrentBranch();
+function initGUIObjects(handles)
 
 % retrieves the data struct
-iData = getappdata(handles.figGitCreate,'iData');
+hFig = handles.figGitCreate;
+vObj = getappdata(hFig,'vObj');
+iData = getappdata(hFig,'iData');
+
+% retrieves the branch group types
+bGrpType = vObj.bGrpType;
+[iBr,iCm] = vObj.getCurrentHeadInfo();
+[cBr,isDetached] = deal(vObj.rObj.brData{iBr,1},iCm>1);
 
 % sets the branch type strings
 if isDetached
@@ -222,52 +226,53 @@ set(handles.popupBranchType,'String',lStr(:),'Value',1);
 iData.bType = lStr{1};
 
 % updates the parameter data structs/detached flag into the GUI
-setappdata(handles.figGitCreate,'iData',iData)
-setappdata(handles.figGitCreate,'isDetached',isDetached)
+setappdata(hFig,'iData',iData)
+setappdata(hFig,'isDetached',isDetached)
 
 % updates the parent branch
 updateParentBranches(handles)
 
 % disables the creation button
-set(handles.pushCreate,'enable','off')
+setObjEnable(handles.pushCreate,0)
 
 % --- updates the parent branch popup menu strings
 function updateParentBranches(handles)
 
 % if the head is detached, then the parent branch is fixed (so exit)
-if getappdata(handles.figGitCreate,'isDetached')
+hFig = handles.figGitCreate;
+if getappdata(hFig,'isDetached')
     return
 end
 
 % initialisations
 eStr = {'off','on'};
-GM = getappdata(handles.figGitCreate,'GitMenu');
-GB = GM.GitBranch;
+hPopupBr = handles.popupBranchType;
+vObj = getappdata(hFig,'vObj');
 
 % retrieves the currently selected branch string
-lStrG = get(handles.popupBranchType,'String');
-iSelG = get(handles.popupBranchType,'Value');
+lStrG = get(hPopupBr,'String');
+iSelG = get(hPopupBr,'Value');
 
 % determines the parent branch types based on the branch type
-switch (lStrG{iSelG})
+switch lStrG{iSelG}
     case ('develop')
         % case is a develop branch (can only branch from master branch)
-        lStr = GB.bStrGrp{1};
+        lStr = vObj.bStrGrp{1};
         
     case ('feature')
         % case is a feature branch (can only branch from develop branches)
-        lStr = GB.bStrGrp{strcmp(GB.bGrpType,'develop')};
+        lStr = vObj.bStrGrp{strcmp(vObj.bGrpType,'develop')};
         
     case ('hotfix')
         % case is a hot-fix branch (can only branch from master branch)
-        lStr = GB.bStrGrp{1};
+        lStr = vObj.bStrGrp{1};
         
     case ('other')
         % case is an other branch (can branch from all but hotfix branches)
-        iGrpT = strcmp(GB.bGrpType,'main') | ...
-                strcmp(GB.bGrpType,'develop') | ...
-                strcmp(GB.bGrpType,'feature');
-        lStr = cell2cell(GB.bStrGrp(iGrpT));
+        iGrpT = strcmp(vObj.bGrpType,'main') | ...
+                strcmp(vObj.bGrpType,'develop') | ...
+                strcmp(vObj.bGrpType,'feature');
+        lStr = cell2cell(vObj.bStrGrp(iGrpT));
 end
 
 % updates the parent branch properties
@@ -275,9 +280,9 @@ set(handles.popupParentBranch,'string',lStr(:),'value',1,...
                               'enable',eStr{1+(length(lStr)>1)})
 
 % resets the parent branch string in the data struct
-iData = getappdata(handles.figGitCreate,'iData');                          
+iData = getappdata(hFig,'iData');                          
 iData.pBr = lStr{1};
-setappdata(handles.figGitCreate,'iData',iData)                          
+setappdata(hFig,'iData',iData)                          
                           
 % --- initialises the data struct
 function iData = initDataStruct()

@@ -26,14 +26,20 @@ function GitBranchInfo_OpeningFcn(hObject, eventdata, handles, varargin)
 handles.output = hObject;
 
 % makes the version GUI invisible
-hGV = findall(0,'tag','figGitVersion');
+vObj = varargin{1};
 
 % sets the input arguments
-setappdata(hObject,'mObj',varargin{1})
-setappdata(hObject,'hGV',hGV)
+setappdata(hObject,'vObj',vObj)
+setObjVisibility(vObj.hFig,0);
+
+% creates a progress loadbar
+h = ProgressLoadbar('Finding All Repository Branches...');
 
 % initialises the GUI objects
-initGUIObjects(handles,hGV)
+initGUIObjects(handles,vObj)
+
+% deletes the loadbar
+delete(h);
 
 % Update handles structure
 guidata(hObject, handles);
@@ -65,105 +71,118 @@ menuExit_Callback(handles.menuExit, [], handles)
 function menuExit_Callback(hObject, eventdata, handles)
 
 % retrieves the main GUI object handle
-hGV = getappdata(handles.figBranchInfo,'hGV');
+hFig = handles.figBranchInfo;
+vObj = getappdata(hFig,'vObj');
 
 % deletes the GUI
-delete(handles.figBranchInfo)
+delete(hFig)
 
 % makes the main GUI invisible
-set(hGV,'visible','on')
+setObjVisibility(vObj.hFig,1)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%                     OBJECT CALLBACK FUNCTIONS                     %%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
-% --- Executes on selection change in listBranchDel.
-function listBranchDel_Callback(hObject, eventdata, handles)
+% --- Executes when selected cell(s) is changed in tableBranchDel.
+function tableBranchDel_CellSelectionCallback(hObject, eventdata, handles)
 
 % enables the restore branch button
-set(handles.buttonRestoreBranch,'enable','on')
+setObjEnable(handles.buttonRestoreBranch,1)
 
 % --- Executes on button press in buttonRestoreBranch.
 function buttonRestoreBranch_Callback(hObject, eventdata, handles)
 
 % retrieves the deleted listbox strings/values
-dStr = get(handles.listBranchDel,'string');
-iSel = get(handles.listBranchDel,'value');
+hTable = handles.tableBranchDel;
+dData = get(hTable,'Data');
+iSel = getTableCellSelection(hTable);
 
 % prompt the user if they want to restore the deleted branch
-qStr = sprintf('Are you sure you want to restore "%s"?',dStr{iSel});
+qStr = sprintf('Are you sure you want to restore "%s"?',dData{iSel,1});
 uChoice = questdlg(qStr,'Restore Deleted Branch?','Yes','No','Yes');
 if ~strcmp(uChoice,'Yes')
     % if the user cancelled, then exit the function
     return
 end
 
-% retrieves the main GUI object handle and commit ID#s
-cID = getappdata(handles.figBranchInfo,'cID'); 
-mObj = getappdata(handles.figBranchInfo,'mObj'); 
+% retrieves the main GUI object handle and commit ID#s;
+hFig = handles.figBranchInfo;
+vObj = getappdata(hFig,'vObj'); 
 
 % restores the deleted branch
-mObj.GitBranch.restoreDeletedBranch(dStr{iSel},cID{iSel})
+vObj.restoreDeletedBranch(dData{iSel,1},dData{iSel,2})
 
 % updates the current branch list
 cStr = get(handles.listBranchCurr,'string');
-set(handles.listBranchCurr,'string',[cStr;dStr{iSel}])
+set(handles.listBranchCurr,'string',[cStr;dData{iSel,1}])
 
-% updates
-[ii,eStr] = deal(1:length(dStr) ~= iSel,{'off','on'});
-set(handles.listBranchDel,'string',dStr(ii))
-set(hObject,'enable',eStr{1+(sum(ii)>0)})
+% removes the restored branch from the table
+ii = 1:size(dData,1) ~= iSel;
+set(hTable,'Data',dData(ii,:))
+setObjEnable(hObject,sum(ii)>0)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%                          OTHER FUNCTIONS                          %%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % --- initialises the GUI objects
-function initGUIObjects(handles,hGV)
+function initGUIObjects(handles,vObj)
 
-% makes the main GUI invisible
-set(hGV,'visible','off')
-
-% retrieves the GitMenu object
-mObj = getappdata(handles.figBranchInfo,'mObj');
+% initialisations
+tData = [];
+cStr = 'commit: Branch Delete';
 
 % sets the current branch listbox values
-cBrStr = cell2cell(mObj.GitBranch.bStrGrp);
+cBrStr = cell2cell(vObj.bStrGrp);
 set(handles.listBranchCurr,'string',cBrStr,...
                            'max',2,'value',[],'enable','inactive')
 
 % determines if there are any deleted branches
-delBrInfo0 = mObj.GitFunc.gitCmd('log-grep-all','Branch Delete');
+delBrInfo0 = vObj.gfObj.gitCmd('reflog-grep','HEAD',cStr);
 if isempty(delBrInfo0)
     % if no deleted branches, then disable the branch restore button
-    set(handles.buttonRestoreBranch,'enable','off')
+    setObjEnable(handles.buttonRestoreBranch,0)
+    
 else
     % retrieves the deleted branch information messages
-    delBrInfo = strsplit(delBrInfo0,'\n');
-    isMsg = cellfun(@(x)(startsWith(x,'Reflog message:')),delBrInfo);    
-    delBrInfo = unique(delBrInfo(isMsg));
+    delBrInfo = strsplit(delBrInfo0,'\n')';
+    brDelStr = 'commit: Branch Delete';
+    isMsg = cellfun(@(x)(strContains(x,brDelStr)),delBrInfo) & ...
+                        ~strContains(delBrInfo,'fatal:');    
+    delBrInfo = delBrInfo(isMsg);
     
     % memory allocation
     nBr = length(delBrInfo);
     [cID,delBr] = deal(cell(nBr,1));
     
     % retrieves the names/last commit ID#s of the deleted branches
+    isOK = false(nBr,1);
     for i = 1:nBr
         msgInfo0 = regexp(delBrInfo{i}, '[^()]*', 'match');
         msgInfo = strsplit(msgInfo0{2});
-        [delBr{i},cID{i}] = deal(msgInfo{1},msgInfo{end});
+        [delBr{i},cID{i}] = deal(msgInfo{1},msgInfo{end}(1:7));
+        
+        % determines if the commit 
+        pCID = strsplit(vObj.gfObj.gitCmd('get-commit-parent',cID{i}));
+        if length(pCID) == 2 && ~strcmp(pCID{1},'error:')
+            isOK(i) = any(strcmp(vObj.rObj.bInfo(:,1),pCID{2}(1:7)));
+        end
     end
     
     % determines if the deleted branches is not included within the current
     % branch name list
-    isOK = cellfun(@(x)(~any(strcmp(cBrStr,x))),delBr);
+    isOK = isOK & cellfun(@(x)(~any(strcmp(cBrStr,x))),delBr);
     if any(isOK)    
         % sets the listbox strings and commit ID strings
-        set(handles.listBranchDel,'string',delBr(isOK),'max',1,'value',1)
-        setappdata(handles.figBranchInfo,'cID',cID(isOK));
+        tData = [delBr(isOK),cID(isOK)];            
     else
         % if no deleted branches, then disable the branch restore button
-        set(handles.buttonRestoreBranch,'enable','off') 
+        setPanelProps(handles.panelBranchDel,0)
+        setObjEnable(handles.buttonRestoreBranch,0)
     end
 end
+
+% auto-resizes the table
+set(handles.tableBranchDel,'Data',tData)    
+autoResizeTableColumns(handles.tableBranchDel);
