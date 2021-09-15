@@ -50,7 +50,7 @@ for i = 1:length(isHover)
                          (prod(sign(yD-mPos(1,2))) == -1);
             
         case {'uipanel','uicontrol'}
-            pPos = getObjGlobalCoord(axObj(i)) + dX*[-1,-1,2,2];
+            pPos = getObjGlobalCoordGit(axObj(i)) + dX*[-1,-1,2,2];
             [xD,yD] = deal(pPos(1)+[0,pPos(3)],pPos(2)+[0,pPos(4)]);
             
             isHover(i) = (prod(sign(xD-mPos(1,1))) == -1) && ...

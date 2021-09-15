@@ -35,7 +35,6 @@ setObjVisibility(hFig,0)
 
 % initialises the data struct and other important fields
 setappdata(hObject,'hFig',hFig)
-% setappdata(hObject,'localBr','LocalWorking')
 
 % % sets the function handle
 % setappdata(hObject,'updateFcn',@panelVerFilt_SelectionChangedFcn)

@@ -3,13 +3,21 @@ function createGitIgnoreFile(GF)
 % global variables
 global mainProgDir
 
+% initialisations
+zipFile = [];
+
 % sets the base git repository directory
-gDir = fullfile(mainProgDir,'Code','Common','Git','Repo');
+gDir = fullfile(mainProgDir,'Git','Repo');
 
 % sets the git repository type dependent on the input
 switch GF.rType
     case 'Main'
         gRepo = 'DART';
+       
+        % sets the zip file array
+        fexDir = fullfile(mainProgDir,'Code','Common','File Exchange');
+        zipFile = {'ExeUpdate.zip';...
+                   fullfile(fexDir,'ColoredFieldCellRenderer.zip')};
         
     case 'AnalysisGen'
         gRepo = 'DARTAnalysisGen';
@@ -22,10 +30,31 @@ end
 igDir = fullfile(gDir,gRepo);
 igFile = fullfile(igDir,'.gitignore');
 if exist(igFile,'file')
+    % reads the data from the ignore file
+    igData = readIgnoreFile(igFile);
+    if strContains(igData,'/Common/Git')
+        delete(igFile);
+        pause(0.05);
+    else    
+        % loops through each of the listed zip files. if the zip file is
+        % present on the drive, but not the ignore file, then delete the
+        % ignore file and exit the loop
+        for i = 1:length(zipFile)
+            if exist(zipFile{i},'file') && ~strContains(igData,zipFile{i})
+                delete(igFile);
+                pause(0.05);
+                break
+            end
+        end
+    end
+        
     % if the file exists, then exit the function
-    GF.gitCmd('unset-global-config','core.excludesfile')    
-    GF.gitCmd('set-global-config','core.excludesFile',['"',igFile,'"']);
-    return
+    if exist(igFile,'file')
+        igFileF = ['"',igFile,'"'];
+        GF.gitCmd('unset-global-config','core.excludesfile')    
+        GF.gitCmd('set-global-config','core.excludesFile',igFileF);
+        return
+    end
 end
 
 % initialisations
@@ -35,8 +64,8 @@ allowFileC = {'*.fig'};
 % sets the repository specific files to ignore
 switch GF.rType
     case 'Main' % case is the main DART repository
-        allowFileR = {'*.m','/Code'};
-        ignoreFileR = {'/Code/Common/Git',...
+        allowFileR = {'*.m','*.zip','/Code'};
+        ignoreFileR = {'/Git',...
                        '/Code/Executable Only',...
                        '/Code/External Apps'};        
         
@@ -49,6 +78,9 @@ switch GF.rType
         ignoreFileR = {'*/*'};
         
 end
+
+% adds the zip files to the array
+ignoreFileR = [ignoreFileR(:);convertZipFilePath(zipFile(:))];
 
 % otherwise, create the file object
 fid = fopen(igFile,'w');
@@ -75,3 +107,25 @@ fclose(fid);
 % sets the exclusion file location
 GF.gitCmd('unset-global-config','core.excludesfile')
 GF.gitCmd('set-global-config','core.excludesFile',sprintf('"%s"',igFile));
+
+% --- reads the data from the ignore data file
+function igData = readIgnoreFile(igFile)
+
+fid = fopen(igFile,'r'); 
+igData = fread(fid,'*char')'; 
+fclose(fid);
+
+% --- converts the zip file path
+function zipFile = convertZipFilePath(zipFile)
+
+% global variables
+global mainProgDir
+
+% exits if the zip file is empty
+if isempty(zipFile); return; end
+
+% converts the absolute path to the relative path
+for i = 1:length(zipFile)
+    zipFile{i} = strrep(zipFile{i},mainProgDir,'');
+    zipFile{i} = strrep(zipFile{i},'\','/');
+end

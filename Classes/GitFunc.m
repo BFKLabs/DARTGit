@@ -464,6 +464,7 @@ classdef GitFunc
             
             % retrieves the current directory
             cDir = pwd;            
+            addFileList = {'.m'};
             
             % retrieves the branch status
             cd(obj.gDirP)
@@ -485,15 +486,50 @@ classdef GitFunc
                 [nwStr.Path,fName,fExtn] = fileparts(brStatusNw); 
                 nwStr.Name = sprintf('%s%s',fName,fExtn);
                 
-                % 
+                % determines where the file is a merge conflict/difference
                 if strcmp(brType,'AA') || strcmp(brType,'UU')
+                    % case is a conflict file
                     dcFiles.Conflict = [dcFiles.Conflict;nwStr];
+                
                 else
+                    % case is a difference file (if in the added file list)
                     dcFiles.Diff = [dcFiles.Diff;nwStr];
                 end
             end
         end
-          
+        
+        % --- resets the local branch so that 
+        function ok = matchRemoteBranch(obj,cBr)
+
+            % sets the remote branch
+            cBrR = sprintf('origin/%s',cBr);
+            obj.gitCmd('fetch-origin',cBr);
+
+            % keep attempting to reset the local branch (creates new
+            % directories manually if permission is denied)
+            while 1
+                rMsg = obj.gitCmd('hard-reset',cBrR);
+                if strContains(rMsg,'fatal: cannot create directory')
+                    % sets the full path of the missing directory
+                    dStr = regexp(rMsg,'''[^()]*''','match');
+                    nwDir = fullfile(obj.gDirP,dStr{1}(2:end-1));
+
+                    % attempts to create the directory
+                    cStatus = mkdir(nwDir);
+                    if cStatus == 0
+                        % if there was an error then exit
+                        ok = false;
+                        break
+                    end
+                else
+                    % otherwise, exit the loop
+                    ok = true;
+                    break
+                end
+            end
+
+        end        
+        
         % --- clears the clear git history struct field for a given branch
         function clearGitHistory(obj,fStr)
             % retrieves the git version GUI object handle/history struct
@@ -1334,6 +1370,11 @@ classdef GitFunc
                     [cBr,fName] = deal(varargin{1},varargin{2});
                     gitCmdStr = sprintf('checkout origin/%s -- "%s"',...
                                         cBr,fName);
+                    
+                case 'checkout-branch-file'
+                    % checks out a file from a given branch
+                    [cBr,fName] = deal(varargin{1},varargin{2});
+                    gitCmdStr = sprintf('checkout %s -- "%s"',cBr,fName);                                  
                     
                 case 'force-checkout'
                     % case is force switching a branch (ignores changes)

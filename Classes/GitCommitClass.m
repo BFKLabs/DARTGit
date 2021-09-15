@@ -27,7 +27,7 @@ classdef GitCommitClass < handle
         dX = 10;
         ok = true;    
         isCommit = false;
-        tStr = {'Altered','Added','Removed'};
+        tStr = {'Altered','Added','Removed','Moved'};
         
     end
     

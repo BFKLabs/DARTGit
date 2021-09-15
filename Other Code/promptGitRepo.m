@@ -23,6 +23,23 @@ end
 gRepoDir0 = cellfun(@(x)(fread(fopen(fullfile(x,'.git'),'r'),...
                                  inf,'uint8=>char')'),gDir0(:),'un',0);
 gRepoDir = cellfun(@(x)(x(9:end-1)),gRepoDir0,'un',0);
+fclose('all');
+
+% ensures the 
+for i = find(strContains(gRepoDir,'Code/Common/Git'))'
+    % deletes the previous file
+    gRepoFile = fullfile(gDir0{i},'.git');
+    delete(gRepoFile);
+    pause(0.05);    
+    
+    % prepares the string for output
+    gRepoDir{i} = strrep(gRepoDir{i},'Common/Git','Git');    
+    
+    % writes the string to file
+    fid = fopen(gRepoFile,'w');
+    fprintf(fid,'gitdir: %s\n',gRepoDir{i});
+    fclose(fid);
+end
 
 % retrieves the descriptions of the Git repositories
 gDesc = cellfun(@(x)(fread(fopen(fullfile(x,'description'),'r'),...

@@ -42,7 +42,7 @@ for i = 1:length(dStrF)
             fStr = 'Moved';
     end
 
-    % updates the difference struct
+    % updates the difference struct    
     if isempty(getStructField(pDiff,fStr))
         pDiff = setStructField(pDiff,fStr,pDiffNw);
     else

@@ -199,7 +199,7 @@ classdef AxesContextMenuGit < handle
             % parameters
             [xOfs,yOfs] = deal(5,5);
             mnPos = get(obj.hMenu,'Position');
-            pPos = getObjGlobalCoord(get(obj.hMenu,'Parent'));
+            pPos = getObjGlobalCoordGit(get(obj.hMenu,'Parent'));
 %             pPos = get(get(obj.hMenu,'Parent'),'Position');            
             
             % sets the menu left position

@@ -100,7 +100,7 @@ switch abbStr
     case 'AA'
         dType = 'Added';
         
-    case 'M'
+    case {'M','??'}
         dType = 'Modified';
     
 end

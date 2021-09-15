@@ -292,42 +292,43 @@ classdef GitVerClass < handle
 
             % creates the menu items
             gitEnvVarFunc('add','GIT_DIR',obj.gRepoDir)
-            obj.gfObj = GitFunc(obj.rType,obj.gDirP,obj.gName);
+            obj.gfObj = GitFunc(obj.rType,obj.gDirP,obj.gName);            
             
             % creates/sets the gitignore file 
-            createGitIgnoreFile(obj.gfObj);
+            createGitIgnoreFile(obj.gfObj);                        
             
             % if a developer, then ensure the local and remote repositories
             % match (NB - this is important for picking up hotfix branches)
-            if obj.gfObj.uType == 0
+            if obj.gfObj.uType == 0     
+                % initialisations
+                isMod = false;
+                
                 % ensures that the origin url has been set
                 if isempty(obj.gfObj.gitCmd('get-origin'))
                     obj.gfObj.gitCmd('set-origin')
                 end
-                
+
                 % fetches the remote repository (prunes any removed)
-                obj.gfObj.gitCmd('fetch-origin-prune');                             
+                obj.gfObj.gitCmd('fetch-origin-prune');                 
                 
-                % strips the branches into remote and local
-                brInfo = obj.gfObj.getBranchInfo(1);
-                isR = strContains(brInfo(:,1),'origin');
-                brL = brInfo(~isR,1);
-                brR = cellfun(@(x)(getFileName(x)),brInfo(isR,1),'un',0);
+                % separates the branches into remote and local 
+                brInfo = obj.gfObj.getBranchInfo(true);
+                [brL,brR,isR] = obj.splitBranchInfo(brInfo);                
+                
+                % retrieves the current branch
+                cID0 = obj.gfObj.gitCmd('commit-id');
+                cBrL = obj.gfObj.gitCmd('current-branch');
+                if isempty(cBrL); cBrL = 'master'; end     
                 
                 % ensures all the local branches
                 if ~isequal(brL,brR)
-                    % retrieves the current branch
-                    cID = obj.gfObj.gitCmd('commit-id');
-                    cBr = obj.gfObj.gitCmd('current-branch');
-                    if isempty(cBr); cBr = 'master'; end   
-                    
                     % determines if there are any modifications to the head
                     isMod = obj.detIfHeadModified;
                     if isMod
                         % if so, then stash the modifications
-                        sStr = obj.gfObj.getStashBranchString(cBr);
-                        obj.gfObj.stashBranchFiles(sStr);                        
-                    end
+                        sStr = obj.gfObj.getStashBranchString(cBrL);
+                        obj.gfObj.stashBranchFiles(sStr);
+                    end                                  
                     
                     % adds on any local branches missing from remote
                     for i = 1:length(brR)
@@ -344,26 +345,56 @@ classdef GitVerClass < handle
                     end
                     
                     % resets the head to the original point                    
-                    if startsWith(cID,brInfo{strcmp(brInfo(:,1),cBr),2})
+                    if startsWith(cID0,brInfo{strcmp(brInfo(:,1),cBrL),2})
                         % case is the head of the branch
-                        obj.gfObj.checkoutBranch('local',cBr)
+                        obj.gfObj.checkoutBranch('local',cBrL)
                     else
                         % case is a detached head
-                        obj.gfObj.checkoutBranch('version',cID)
-                    end      
+                        obj.gfObj.checkoutBranch('version',cID0)
+                    end 
                     
-                    % restores any stashed modifications
-                    if isMod
-                        obj.gfObj.unstashBranchFiles(sStr); 
-                    end
-                    
+                    % resets the branch information 
+                    brInfo = obj.gfObj.getBranchInfo(true);
+                    [~,~,isR] = obj.splitBranchInfo(brInfo);   
                 end
+                
+                % determines if local branch heads match the remote. if not
+                % then reset the branch heads
+                [cIDL,cIDR] = deal(brInfo(~isR,2),brInfo(isR,2));
+                if ~isequal(cIDL,cIDR)
+                    % determines if there are any modifications to the head
+                    isMod = obj.detIfHeadModified;
+                    if isMod
+                        % if so, then stash the modifications
+                        sStr = obj.gfObj.getStashBranchString(cBrL);
+                        obj.gfObj.stashBranchFiles(sStr);
+                    end                          
+                    
+                    % resets the local branches (for those whose head
+                    % doesn't match)
+                    for i = 1:length(cIDL)
+                        if ~strcmp(cIDL{i},cIDR{i})
+                            obj.gfObj.checkoutBranch('local',cIDL{i})
+                            obj.gfObj.matchRemoteBranch(cIDL{i});                            
+                        end
+                    end               
+                    
+                    % checks out the original branch
+                    obj.gfObj.checkoutBranch('version',cID0)
+                end
+                
+                % restores any stashed modifications
+                if isMod
+                    obj.gfObj.unstashBranchFiles(sStr); 
+                end                
+                
             else
                 % if a user, then determine if the remote branch head is
                 % the same as the current
                 obj.gfObj.gitCmd('set-origin');
-                
-                % retrieves the local/remote master commit IDs
+                obj.gfObj.gitCmd('fetch-origin','master');  
+
+                % retrieves the local/remote master commit IDs  
                 brInfo = obj.gfObj.getBranchInfo(true);
                 cIDL = brInfo{strcmp(brInfo(:,1),'master'),2};
                 cIDR = brInfo{strcmp(brInfo(:,1),'origin/master'),2};
@@ -383,9 +414,12 @@ classdef GitVerClass < handle
                     obj.gfObj.stashBranchFiles(sStr);
                 end
                 
+                % resets the local branch to match the remote
+                obj.gfObj.checkoutBranch('local','master')
+                obj.gfObj.matchRemoteBranch('master');
+                
                 % resets the local head to the remote head and then
-                % rechecks out the original local commit
-                obj.gfObj.gitCmd('hard-reset','origin/master');
+                % rechecks out the original local commit                
                 obj.gfObj.checkoutBranch('version',cIDL)
                 
                 % if there were modifications, then unstash them
@@ -1078,21 +1112,7 @@ classdef GitVerClass < handle
                 isCont = GitMerge(obj,dcFiles,mBr,cBr);  
                 setObjVisibility(obj.hFig,1)                
                                 
-                if isCont
-                    % case is the user updates the merge files
-                    for i = 1:length(dcFiles.Diff)
-                        % sets the full file name
-                        if isempty(dcFiles.Diff(i).Path)
-                            dFile = dcFiles.Diff(i).Name;
-                        else
-                            dFile = sprintf('%s/%s',dcFiles.Diff(i).Path,...
-                                                    dcFiles.Diff(i).Name);
-                        end
-                        
-                        % re-adds the file 
-                        obj.gfObj.gitCmd('add-file',dFile);
-                    end
-                else
+                if ~isCont
                     % if the user aborted the merge, then revert back to
                     % the original branch and exit the function   
                     obj.gfObj.gitCmd('abort-merge')
@@ -2520,6 +2540,15 @@ classdef GitVerClass < handle
             end
             
         end               
+        
+        % --- splits the branch info local and remote branches
+        function [brL,brR,isR] = splitBranchInfo(brInfo)
+
+            isR = strContains(brInfo(:,1),'origin');
+            brL = brInfo(~isR,1);
+            brR = cellfun(@(x)(getFileName(x)),brInfo(isR,1),'un',0);
+
+        end                
         
     end
 

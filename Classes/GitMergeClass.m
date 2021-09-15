@@ -90,7 +90,9 @@ classdef GitMergeClass < handle
             rTypeC = {'Custom Resolve',...
                      sprintf('Use "%s"',mBrC),...
                      sprintf('Use "%s"',cBrC)};                                  
-            rTypeD = {'Custom Resolve','Accept Differences'};
+            rTypeD = {'Custom Resolve',...
+                      'Accept Differences',...
+                      'Reject Differences'};
             cForm = {{'char',rTypeC,'logical'},{'char',rTypeD,'logical'}};            
 
             % reverts all difference files back to original
@@ -135,7 +137,8 @@ classdef GitMergeClass < handle
                     bgCol = repmat(obj.Red,nFld,1);
                     
                     % sets the table data
-                    tData = [fName,cForm{i}{2}(ii),num2cell(obj.isOK{i})];
+                    fOK = num2cell(obj.isOK{i});
+                    tData = [fName,arr2vec(cForm{i}{2}(ii)),fOK];
                     set(hTable,'Data',tData,'ColumnFormat',cForm{i},...
                                'BackgroundColor',bgCol)
                     autoResizeTableColumns(hTable)
@@ -394,8 +397,13 @@ classdef GitMergeClass < handle
         function updateSelectionProperties(obj,hTable,iRowSel)
 
             % parameters
+            Data = get(hTable,'Data');
             tStr = get(hTable,'tag');
             bStr = tStr(6:end);
+            
+            % sets the files that are acceptable for editting
+            acceptExtn = {'.m'};
+            isFeas = endsWith(Data{iRowSel,1},acceptExtn);
 
             % retrieves the control button object handles
             h = obj.hGUI;
@@ -403,10 +411,9 @@ classdef GitMergeClass < handle
             hButR = getStructField(h,sprintf('buttonResolve%s',bStr));
 
             % sets the enabled properties of the control buttons depending 
-            % on whether the conflict/difference has been resolved or not
-            Data = get(hTable,'Data');
-            setObjEnable(hButV,Data{iRowSel,3})
-            setObjEnable(hButR,~Data{iRowSel,3})
+            % on whether the conflict/difference has been resolved or not            
+            setObjEnable(hButV,Data{iRowSel,3} && isFeas)
+            setObjEnable(hButR,~Data{iRowSel,3} && isFeas)
 
         end
         

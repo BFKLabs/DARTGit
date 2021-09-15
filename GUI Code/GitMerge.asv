@@ -128,11 +128,11 @@ for i = find(mrgObj.iAct{2}(:)>1)'
     switch mrgObj.iAct{2}(i)
         case 2
             % case is accepting the merging branch file
-            gfObj.gitCmd('checkout-branch-file',mrgObj.cBr,fName);
+            gfObj.gitCmd('checkout-ours',fName);
             
         case 3
             % case is accepting the current branch file
-            gfObj.gitCmd('checkout-branch-file',mrgObj.mBr,fName);
+            gfObj.gitCmd('checkout-theirs',fName);
     end
     
     % re-adds the file and continues

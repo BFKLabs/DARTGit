@@ -173,8 +173,12 @@ classdef RepoStructure < handle
             %     search would be best (but would take too long)
             
             %
+            brName = field2cell(obj.gHist,'brName');
+            gHistM = obj.gHist(strcmp(brName,'master'));
+            
+            %
             stStr = {'file','deletion','insertion'};
-            [CID,Date] = deal(obj.gHist.brInfo.CID,obj.gHist.brInfo.Date);
+            [CID,Date] = deal(gHistM.brInfo.CID,gHistM.brInfo.Date);
             DateH = obj.gitFunc('get-commit-date',hID0);
             
             %

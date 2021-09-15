@@ -125,7 +125,7 @@ classdef GitGraph < dynamicprops & handle
                                  'beveledin','Parent',obj.hPanelP);                
                              
             % sets the global axis limits
-            axPos = getObjGlobalCoord(obj.hPanel);
+            axPos = getObjGlobalCoordGit(obj.hPanel);
             [obj.axPosX,axPosX] = deal(axPos(1)+[0,axPos(3)]);
             [obj.axPosY,axPosY] = deal(axPos(2)+[0,axPos(4)]);    
             
