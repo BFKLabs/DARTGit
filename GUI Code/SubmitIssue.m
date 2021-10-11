@@ -487,7 +487,7 @@ function hCB = setupCheckboxList(hPanel,cLblStr,cPos,cbFcn,tStr)
 
 % create CheckBoxListComboBox
 jCB = com.jidesoft.combobox.CheckBoxListComboBox(cLblStr);
-[hCB, hJavaCBWrapper] = javacomponent(jCB, [], hPanel); 
+[hCB, hJavaCBWrapper] = createJavaComponent(jCB, [], hPanel); 
 set(hJavaCBWrapper,'Units','pixels','Position',cPos);
 
 % direct access

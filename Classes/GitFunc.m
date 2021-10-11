@@ -262,17 +262,17 @@ classdef GitFunc
                 % retrieves the files extenstions of the 
                 fMod = strsplit(fMod,'\n');
                 fExtn = cellfun(@(x)(getFileExtn(x)),fMod(:),'un',0);
-                
-                % determines the forced valid files
-                vFiles = {'ProgPara.mat'};
-                isV = cellfun(@(x)(strContains(fMod(:),x)),vFiles,'un',0);
+%                 
+%                 % determines the forced valid files
+%                 vFiles = {'ProgPara.mat'};
+%                 isV = cellfun(@(x)(strContains(fMod(:),x)),vFiles,'un',0);
                 
                 % determines if any of the altered files are valid (i.e.,
                 % any non-asv or non.mat files, but can include files
                 % from the valid file list)
                 isOK = ~(strcmp(fExtn,'.asv') | ...
-                         strcmp(fExtn,'.mat')) | ...
-                         any(cell2cell(isV),2);
+                         strcmp(fExtn,'.mat'));% | ...
+%                          any(cell2cell(isV),2);
                 [isMod,fMod] = deal(any(isOK),fMod(isOK));
             end    
         
@@ -1090,8 +1090,19 @@ classdef GitFunc
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%                                                                                     
                                                            
                 case 'stash-list'
-                    % retrieves the list of stashed files
+                    % retrieves the list of stashed files                    
                     gitCmdStr = 'stash list';
+                    if ~isempty(varargin)
+                        % sets the appending string (based on the input)
+                        switch varargin{1}
+                            case 'date-local'
+                                addStr = '--date=local';
+                                
+                        end
+                        
+                        % appends the string to the git string
+                        gitCmdStr = sprintf('%s %s',gitCmdStr,addStr);
+                    end
                     
                 case 'stash-pop'
                     % pops the stashed branch given by the index, iPop

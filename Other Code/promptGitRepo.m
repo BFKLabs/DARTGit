@@ -33,7 +33,7 @@ for i = find(strContains(gRepoDir,'Code/Common/Git'))'
     pause(0.05);    
     
     % prepares the string for output
-    gRepoDir{i} = strrep(gRepoDir{i},'Common/Git','Git');    
+    gRepoDir{i} = strrep(gRepoDir{i},'Code/Common/Git','Git');    
     
     % writes the string to file
     fid = fopen(gRepoFile,'w');

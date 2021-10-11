@@ -93,8 +93,7 @@ classdef GitCommitClass < handle
             % retrieves the status string and splits into by line
             cd(obj.gfObj.gDirP)
             obj.gfObj.gitCmd('show-all-untracked');
-            sStr = obj.gfObj.gitCmd('status-short');     
-%             sStr = obj.gfObj.gitCmd('diff-status',obj.cID);      
+            sStr = obj.gfObj.gitCmd('status-short');   
             obj.sDiff = splitDiffStatus(sStr,obj.tStr,1);
             cd(cDir)
 
@@ -170,12 +169,8 @@ classdef GitCommitClass < handle
                 set(obj.hList{i},'Callback',@obj.selDiffItem)                         
             end     
 
-            % retrieves the table group java object
-            obj.jTab = findjobj(obj.hTabDiff);
-            obj.jTab = obj.jTab(arrayfun(@(x)...
-                        (strContains(class(x),'MJTabbedPane')),obj.jTab));
-
             % disables all the tabs for each group type
+            obj.jTab = getTabGroupJavaObj(obj.hTabDiff);
             arrayfun(@(x)(obj.jTab.setEnabledAt(x-1,0)),1:obj.nTab)
         
         end                
@@ -240,7 +235,7 @@ classdef GitCommitClass < handle
             
             % creates the tree object
             tPos = [obj.dX*[1 1],pPos(3:4)-[2*obj.dX,35]];
-            [~,~] = javacomponent(jScrollPane,tPos,hPanel);
+            [~,~] = createJavaComponent(jScrollPane,tPos,hPanel);
 
             % only enabled the commit button if there are commits available
             setObjEnable(handles.buttonPushCommit,hasFiles)

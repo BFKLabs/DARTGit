@@ -41,7 +41,7 @@ pPos = get(hPanel,'position');
 jTree = com.mathworks.mwswing.MJTree(jRoot);
 jCheckBoxTree = handle(CheckBoxTree(jTree.getModel),'CallbackProperties');
 jScrollPane = com.mathworks.mwswing.MJScrollPane(jCheckBoxTree);
-[~,~] = javacomponent(jScrollPane,[dX*[1 1],pPos(3:4)-[2*dX,35]],hPanel);
+[~,~] = createJavaComponent(jScrollPane,[dX*[1 1],pPos(3:4)-[2*dX,35]],hPanel);
 
 % only enabled the commit button if there are any commits available
 setObjEnable(handles.buttonPushCommit,hasFiles)

@@ -27,6 +27,9 @@ handles.output = hObject;
 
 % sets the input arguments
 hFig = varargin{1};
+commitAll = false;
+
+% makes the main gui invisible
 setObjVisibility(hFig,0)
 
 % sets the GUI run type
@@ -43,9 +46,10 @@ switch length(varargin)
             GF = GitFunc(rType,gDirP,gName);
         end
         
-    case (2)
+    case {2,3}
         % if there are input arguments, then set their local values
-        GF = varargin{2};        
+        GF = varargin{2};   
+        commitAll = length(varargin) == 3;
 end
 
 % creates the loadbar
@@ -54,6 +58,7 @@ h = ProgressLoadbar('Determining Current Local Changes...');
 % initialises the important class objects
 comObj = GitCommitClass(hObject,hFig,GF);
 setappdata(hObject,'comObj',comObj)
+setappdata(hObject,'commitAll',commitAll)
 
 % deletes the loadbar
 delete(h)
@@ -101,10 +106,11 @@ end
 % retrieves the GitFunc object
 hFig = handles.figGitCommit;
 comObj = getappdata(hFig,'comObj');
+commitAll = getappdata(hFig,'commitAll');
 postCommitFcn = getappdata(hFig,'postCommitFcn');
 
 % determines if GitCommit was run from the GitVersion GUI
-if ~isempty(findall(0,'tag','figGitVersion'))
+if ~isempty(findall(0,'tag','figGitVersion')) && commitAll
     % if so, then determine if there any uncommitted modifications 
     if comObj.gfObj.detIfBranchModified()
         % if so, then prompt the user if they want to stash these files

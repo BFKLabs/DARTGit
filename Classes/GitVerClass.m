@@ -89,12 +89,12 @@ classdef GitVerClass < handle
         % --------------------------------------------- %        
         
         % --- initialises all the object callback functions
-        function initObjCallbacks(obj)
-           
+        function initObjCallbacks(obj)                      
+            
             % objects with normal callback functions
             cbObj = {'editVerCount','buttonUpdateFilt','menuRefresh',...
                      'buttonUpdateVer','menuRefLog','menuBranchInfo',...
-                     'menuResetHistory'};
+                     'menuResetHistory','menuStashList'};
             for i = 1:length(cbObj)
                 hObj = getStructField(obj.hGUI,cbObj{i});
                 cbFcn = eval(sprintf('@obj.%sCB',cbObj{i}));
@@ -309,7 +309,7 @@ classdef GitVerClass < handle
                 end
 
                 % fetches the remote repository (prunes any removed)
-                obj.gfObj.gitCmd('fetch-origin-prune');                 
+                obj.gfObj.gitCmd('fetch-origin-prune');                                 
                 
                 % separates the branches into remote and local 
                 brInfo = obj.gfObj.getBranchInfo(true);
@@ -327,7 +327,7 @@ classdef GitVerClass < handle
                     if isMod
                         % if so, then stash the modifications
                         sStr = obj.gfObj.getStashBranchString(cBrL);
-                        obj.gfObj.stashBranchFiles(sStr);
+                        obj.gfObj.gitCmd('stash-save',sStr);
                     end                                  
                     
                     % adds on any local branches missing from remote
@@ -355,7 +355,12 @@ classdef GitVerClass < handle
                     
                     % resets the branch information 
                     brInfo = obj.gfObj.getBranchInfo(true);
-                    [~,~,isR] = obj.splitBranchInfo(brInfo);   
+                    [~,~,isR] = obj.splitBranchInfo(brInfo); 
+                    
+                    % restores any stashed modifications
+                    if isMod
+                        obj.gfObj.gitCmd('stash-pop',0);
+                    end                       
                 end
                 
                 % determines if local branch heads match the remote. if not
@@ -367,7 +372,7 @@ classdef GitVerClass < handle
                     if isMod
                         % if so, then stash the modifications
                         sStr = obj.gfObj.getStashBranchString(cBrL);
-                        obj.gfObj.stashBranchFiles(sStr);
+                        obj.gfObj.gitCmd('stash-save',sStr);
                     end                          
                     
                     % resets the local branches (for those whose head
@@ -380,13 +385,19 @@ classdef GitVerClass < handle
                     end               
                     
                     % checks out the original branch
-                    obj.gfObj.checkoutBranch('version',cID0)
-                end
-                
-                % restores any stashed modifications
-                if isMod
-                    obj.gfObj.unstashBranchFiles(sStr); 
-                end                
+                    if startsWith(cID0,cIDL)
+                        % original commit was a branch head
+                        obj.gfObj.checkoutBranch('local',cBrL)
+                    else
+                        % original commit was a detached branch
+                        obj.gfObj.checkoutBranch('version',cID0)                    
+                    end
+                    
+                    % restores any stashed modifications
+                    if isMod
+                        obj.gfObj.gitCmd('stash-pop',0); 
+                    end                       
+                end                             
                 
             else
                 % if a user, then determine if the remote branch head is
@@ -426,6 +437,9 @@ classdef GitVerClass < handle
                 if isMod
                     obj.gfObj.unstashBranchFiles(sStr);
                 end
+                
+%                 % remove
+%                 setObjVisibility(obj.hGUI.menuStashList,0)
                 
                 % removes the origin url 
                 obj.gfObj.gitCmd('rmv-origin');
@@ -471,12 +485,8 @@ classdef GitVerClass < handle
                 set(obj.hList{i},'Callback',@obj.selDiffItem)                         
             end     
 
-            % retrieves the table group java object
-            obj.jTab = findjobj(obj.hTabDiff);
-            obj.jTab = obj.jTab(arrayfun(@(x)...
-                        (strContains(class(x),'MJTabbedPane')),obj.jTab));
-
             % disables all the tabs for each group type
+            obj.jTab = getTabGroupJavaObj(obj.hTabDiff);
             arrayfun(@(x)(obj.jTab.setEnabledAt(x-1,0)),1:obj.nTab)
         
         end
@@ -749,6 +759,14 @@ classdef GitVerClass < handle
             
         end  
                 
+        % --- callback function for clicking menuBranchInfo
+        function menuStashListCB(obj,~,~) 
+            
+            % 
+            stList = obj.gfObj.gitCmd('stash-list','date-local');
+            
+        end
+        
         % --------------------------------------- %
         % --- CONTEXT MENU CALLBACK FUNCTIONS --- %
         % --------------------------------------- %          
@@ -1970,7 +1988,7 @@ classdef GitVerClass < handle
                     
                 case 'Commit'
                     % case is commit changes
-                    GitCommit(obj.hFig,obj.gfObj);
+                    GitCommit(obj.hFig,obj.gfObj,1);
                     
                 case 'Stash'
                     % case is stashing changes

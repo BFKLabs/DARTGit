@@ -417,8 +417,8 @@ classdef RepoStructure < handle
                 if ~isempty(ii)
                     % determines the commits with merges in the branch
                     iMrgG = iMrg(ii);
-                    indGlob = indI(indG{i});
-                    jj = arrayfun(@(x)(find(indGlob==x)),iMrgCm(ii));                    
+%                     indGlob = indI(indG{i});
+%                     jj = arrayfun(@(x)(find(indGlob==x)),iMrgCm(ii));                    
                     
                     % for each of these commits, then set the ID and
                     % branch of the merging commit

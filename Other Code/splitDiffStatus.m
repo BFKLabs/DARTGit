@@ -1,6 +1,9 @@
 % --- splits the status difference into its components
 function pDiff = splitDiffStatus(dStr,tStr,isCommit)
 
+% initialisations
+ignoreFiles = {'ProgPara.mat'};
+
 % memory allocation
 pDiff = struct();
 for i = 1:length(tStr)
@@ -22,30 +25,32 @@ fDir = cellfun(@(x)(fileparts(x{2})),dStrF,'un',0);
 fName = cellfun(@(x)(getFileName(x{2},1)),dStrF,'un',0);
 
 for i = 1:length(dStrF)
-    % sets the difference struct values
-    pDiffNw = struct('Path',fDir{i},'Name',fName{i});
+    if ~any(strcmp(ignoreFiles,fName{i}))
+        % sets the difference struct values
+        pDiffNw = struct('Path',fDir{i},'Name',fName{i});
 
-    % sets the struct fields
-    switch dStrF{i}{1}
-        case 'M'
-            % case is the file was altered, added or deleted
-            fStr = 'Altered';
+        % sets the struct fields
+        switch dStrF{i}{1}
+            case 'M'
+                % case is the file was altered, added or deleted
+                fStr = 'Altered';
 
-        case {'A','??'}
-            fStr = 'Added';
+            case {'A','??'}
+                fStr = 'Added';
 
-        case 'D'
-            fStr = 'Removed';
+            case 'D'
+                fStr = 'Removed';
 
-        otherwise
-            % case is the file was moved
-            fStr = 'Moved';
-    end
+            otherwise
+                % case is the file was moved
+                fStr = 'Moved';
+        end
 
-    % updates the difference struct    
-    if isempty(getStructField(pDiff,fStr))
-        pDiff = setStructField(pDiff,fStr,pDiffNw);
-    else
-        eval(sprintf('pDiff.%s(end+1) = pDiffNw;',fStr));
+        % updates the difference struct    
+        if isempty(getStructField(pDiff,fStr))
+            pDiff = setStructField(pDiff,fStr,pDiffNw);
+        else
+            eval(sprintf('pDiff.%s(end+1) = pDiffNw;',fStr));
+        end
     end
 end

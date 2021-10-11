@@ -28,8 +28,7 @@ for i = 1:length(tStr)
 end     
 
 % retrieves the table group java object
-jTab = findjobj(hTabDiff);
-jTab = jTab(arrayfun(@(x)(strContains(class(x),'MJTabbedPane')),jTab));
+jTab = getTabGroupJavaObj(hTabDiff);
 
 % disables all the tabs for each group type
 if nargin < 4
