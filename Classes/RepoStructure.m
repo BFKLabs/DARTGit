@@ -136,10 +136,10 @@ classdef RepoStructure < handle
             
             % combines the data from the valid branches into a single array  
             isValidBr = ~strContains(brData0(:,2),'detached') & ...
-                cellfun(@(x)(any(strContains(obj.logStr,x))),brData0(:,3));             
-            obj.brData = brData0(isValidBr,2:end);
+                cellfun(@(x)(any(strContains(obj.logStr,x))),brData0(:,3));                        
             
             % appends a column to the array
+            obj.brData = brData0(isValidBr,2:end);
             obj.brData = [obj.brData,cell(sum(isValidBr),1)];
 
             % sets the master initial commit ID
@@ -182,9 +182,10 @@ classdef RepoStructure < handle
             DateH = obj.gitFunc('get-commit-date',hID0);
             
             %
-            isLater = cellfun(@(x)(datenum(x)),Date) >= datenum(DateH);
+            dNumH = datenum(DateH(1:end-6));
+            isLater = cellfun(@(x)(datenum(x)),Date) >= dNumH;
             if all(isLater)
-                i0 = length(cID);
+                i0 = length(CID);
             else
                 i0 = find(isLater,1,'last') + 1;
             end
@@ -483,7 +484,7 @@ classdef RepoStructure < handle
         function getBranchPath(obj,pC,iLog,iBr)
            
             % loop initiaisations
-            cont = true;
+            cont = pC(1) > 1;
             
             % keep searching until either A) the end of a branch is
             % reached, or B) the branch merges into another branch
@@ -729,7 +730,7 @@ classdef RepoStructure < handle
                 case 'get-commit-date'
                     % case is retrieving the date of a commit
                     cID = varargin{1};
-                    gitCmdStr = sprintf('show %s -s --format=%s',cID,'%cs');
+                    gitCmdStr = sprintf('show %s -s --format=%s',cID,'%ci');
                     
                 case 'force-checkout'
                     % case is force switching a commit (ignores changes)

@@ -432,8 +432,10 @@ classdef GitFunc
                     % if not, then create a new directory and add to path
                     if ~strContains(fullPath,addDir{i})
                         % creates/add the new directory to the path
+                        wState = warning('off','all');
                         mkdir(addDir{i});
                         addpath(addDir{i});
+                        warning(wState);
 
                         % appends the new directory to the full path
                         fullPath = sprintf('%s\n%s',fullPath,addDir{i});
@@ -501,6 +503,10 @@ classdef GitFunc
         % --- resets the local branch so that 
         function ok = matchRemoteBranch(obj,cBr)
 
+            % initialisations
+            isInit = true;
+            errStr = 'fatal: cannot create directory';            
+            
             % sets the remote branch
             cBrR = sprintf('origin/%s',cBr);
             obj.gitCmd('fetch-origin',cBr);
@@ -509,7 +515,14 @@ classdef GitFunc
             % directories manually if permission is denied)
             while 1
                 rMsg = obj.gitCmd('hard-reset',cBrR);
-                if strContains(rMsg,'fatal: cannot create directory')
+                if isInit
+                    isInit = false;
+                else
+                    rMsg = obj.gitCmd('hard-reset',cBrR);
+                end
+                
+                % determines if the reset was successful
+                if strContains(rMsg,errStr)
                     % sets the full path of the missing directory
                     dStr = regexp(rMsg,'''[^()]*''','match');
                     nwDir = fullfile(obj.gDirP,dStr{1}(2:end-1));
@@ -520,6 +533,9 @@ classdef GitFunc
                         % if there was an error then exit
                         ok = false;
                         break
+                    else
+                        % otherwise, add the directory to the path
+                        addpath(nwDir)
                     end
                 else
                     % otherwise, exit the loop
@@ -1387,6 +1403,11 @@ classdef GitFunc
                     [cBr,fName] = deal(varargin{1},varargin{2});
                     gitCmdStr = sprintf('checkout %s -- "%s"',cBr,fName);                                  
                     
+%                 case 'checkout-branch-file'
+%                     % checks out a file from a specific branch
+%                     [brName,fName] = deal(varargin{1},varargin{2});
+%                     gitCmdStr = sprintf('checkout %s "%s"',brName,fName);                    
+                    
                 case 'force-checkout'
                     % case is force switching a branch (ignores changes)
                     nwBr = varargin{1};
@@ -1422,12 +1443,7 @@ classdef GitFunc
                     [brName,dFile,dFileOut] = ...
                                 deal(varargin{1},varargin{2},varargin{3});
                     gitCmdStr = sprintf('show %s:"%s" > "%s"',...
-                                brName,dFile,dFileOut);
-                            
-                case 'checkout-branch-file'
-                    % checks out a file from a specific branch
-                    [brName,fName] = deal(varargin{1},varargin{2});
-                    gitCmdStr = sprintf('checkout %s "%s"',brName,fName);
+                                brName,dFile,dFileOut);                            
                             
                 case 'delete-local'
                     % deletes a local branch
