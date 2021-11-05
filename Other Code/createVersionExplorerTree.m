@@ -28,15 +28,15 @@ if ~isempty(hTreeOld); delete(hTreeOld); end
 setappdata(handles.figGitVersion,'hTree',[])
 
 % Root node
-wState = warning('off');
-hRoot = uitreenode('v0', rStr, rStr, [], false);
+hRoot = createUITreeNode(rStr, rStr, [], false);
 set(0,'CurrentFigure',hFig);
-warning(wState);
 
 % adds the tree sub-nodes
 hRoot = addTreeSubNodes(hRoot,gHist,iCurr);
 
 % creates the tree object
-hTree = uitree('v0','parent',hPanel,'Root',hRoot,'position',tPos,...
-               'SelectionChangeFcn',@versionHistSelect);
+wState = warning('off','all');
+[hTree,~] = uitree('v0','Root',hRoot,'parent',hPanel,'position',tPos,...
+                        'SelectionChangeFcn',@versionHistSelect);
 hTree.expand(hRoot)
+warning(wState);

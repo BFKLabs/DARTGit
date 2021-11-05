@@ -64,7 +64,7 @@ allowFileC = {'*.fig'};
 % sets the repository specific files to ignore
 switch GF.rType
     case 'Main' % case is the main DART repository
-        allowFileR = {'*.m','*.zip','/Code'};
+        allowFileR = {'*.m','*.zip','*.p','/Code'};
         ignoreFileR = {'/Git',...
                        '/Code/Executable Only',...
                        '/Code/External Apps'};        

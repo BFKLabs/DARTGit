@@ -34,7 +34,7 @@ for i = 1:length(gHist)
     end
     
     % creates the new node and adds it to the tree
-    hNode = uitreenode('v0', nodeStr, nodeStr, [], true);
+    hNode = createUITreeNode(nodeStr, nodeStr, [], true);
     hNode.setUserObject(uData);
     hRoot.add(hNode);
 end

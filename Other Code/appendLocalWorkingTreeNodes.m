@@ -919,7 +919,7 @@ hNodeM.setAllowsChildren(true)
 
 % creates the new node off the master node
 nodeStr = 'Uncommited Changes*';
-hNodeNw = uitreenode('v0', nodeStr, nodeStr, [], true);
+hNodeNw = createUITreeNode(nodeStr, nodeStr, [], true);
 hNodeNw.setUserObject([]);
 hNodeM.add(hNodeNw);
 
