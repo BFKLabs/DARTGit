@@ -75,19 +75,23 @@ function varargout = GitCommit_OutputFcn(hObject, ~, ~)
 % Get default command line output from handles structure
 varargout{1} = hObject;
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%                     FIGURE CALLBACK FUNCTIONS                     %%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% ----------------------------------------------------------------------- %
+% ---                    FIGURE CALLBACK FUNCTIONS                    --- %
+% ----------------------------------------------------------------------- %
 
 % --- Executes when user attempts to close figGitCommit.
 function figGitCommit_CloseRequestFcn(~, ~, handles)
 
 % runs the GUI exit function
-try; menuExit_Callback(handles.menuExit, [], handles); end
+try
+    menuExit_Callback(handles.menuExit, [], handles); 
+catch ME
+    a = 1;    
+end
     
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%                      MENU CALLBACK FUNCTIONS                      %%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% ----------------------------------------------------------------------- %
+% ---                      MENU CALLBACK FUNCTIONS                    --- %
+% ----------------------------------------------------------------------- %
 
 % -------------------------------------------------------------------------
 function menuExit_Callback(~, ~, handles)
