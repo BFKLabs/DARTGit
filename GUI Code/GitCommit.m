@@ -141,4 +141,4 @@ end
 
 % sets the main GUI visible again
 setObjVisibility(comObj.hFigM,1)
-    
+delete(hFig)    
