@@ -141,7 +141,7 @@ classdef GitVerClass < handle
             obj.hProg.StatusMessage = lStr;
             
             % initialisations            
-            hRadioVer = obj.hGUI.radioAllVer;
+            hRadioVer = obj.hGUI.radioLastVer;
             hPanelVer = obj.hGUI.panelVerFilt;
             hPanelDate = obj.hGUI.panelFiltDate;
             hTableCode = obj.hGUI.tableCodeLine;
@@ -1434,7 +1434,7 @@ classdef GitVerClass < handle
                                     
             % resets the GUI objects
             obj.resetGUIObjects(h)
-            set(obj.hGUI.radioAllVer,'value',1)  
+            set(obj.hGUI.radioLastVer,'value',1)  
             
             % deletes the loadbar
             delete(h)                    

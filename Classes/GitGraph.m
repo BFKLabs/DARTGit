@@ -431,12 +431,14 @@ classdef GitGraph < dynamicprops & handle
             for i = find(~cellfun(@isempty,X(:,2)'))
                 % determines the index of the marker to be updated
                 iMrg = strcmp(obj.rObj.brData(:,1),X{i,3});
-                iComm = strcmp(obj.rObj.gHist(iMrg).brInfo.CID,X{i,2});                
-                uData = str2double(obj.rObj.gHist(iMrg).brInfo.ID{iComm});
+                iComm = strcmp(obj.rObj.gHist(iMrg).brInfo.CID,X{i,2}); 
                 
-                % updates the merge commit marker edge colour
-                hComm = findall(obj.hAx,'tag','hComm','UserData',uData);
-                set(hComm,'MarkerEdgeColor',obj.cCol(X{i,1},:));
+                % updates the merge commit marker edge colour (if any)                
+                if any(iComm)               
+                    uD = str2double(obj.rObj.gHist(iMrg).brInfo.ID{iComm});
+                    hComm = findall(obj.hAx,'tag','hComm','UserData',uD);
+                    set(hComm,'MarkerEdgeColor',obj.cCol(X{i,1},:));
+                end
             end
             
             % ---------------------------------- %
