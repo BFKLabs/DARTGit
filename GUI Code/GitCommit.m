@@ -133,6 +133,7 @@ end
 
 % changes the directory back down to the main directory and closes the GUI
 cd(getProgFileName())
+delete(hFig)
 
 % runs the post commit function (if any)
 if ~isempty(postCommitFcn)    
@@ -141,4 +142,4 @@ end
 
 % sets the main GUI visible again
 setObjVisibility(comObj.hFigM,1)
-delete(hFig)    
+

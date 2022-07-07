@@ -33,6 +33,7 @@ classdef GitCommitClass < handle
     
     % class methods
     methods
+        
         % class constructor
         function obj = GitCommitClass(hFig,hFigM,gfObj)
             

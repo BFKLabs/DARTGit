@@ -292,6 +292,16 @@ classdef RepoStructure < handle
                     return
                 end
                 
+                % determines the index of the current commit
+                [~,gitStr] = system('git describe --contains --all HEAD');
+                brStr = getArrayVal(strsplit(strtrim(gitStr),'~'),1);
+                iBr = strcmp(field2cell(obj.gHist,'brName'),brStr);
+                cIDBr = table2array(obj.gHist(iBr).brInfo(:,2));
+                iCm = find(strcmp(cIDBr,obj.headID));
+                
+                % if the commit index exceeds nHist, then reset nHist
+                if iCm > obj.nHist; obj.nHist = iCm; end
+                
                 % determines the history cutoff point
                 cIDN = gHistM.brInfo.CID{obj.nHist};
                 iLine = find(strContains(obj.logStr,cIDN));

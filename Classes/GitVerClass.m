@@ -71,7 +71,7 @@ classdef GitVerClass < handle
             % initialises the object callbacks
             obj.initObjCallbacks();
             
-            % sets up the repository struct object
+            % sets up the repository struct object            
             obj.setupRepoStructure();
             obj.setupRepoGraph();            
             obj.setupGUIObjects();
@@ -256,7 +256,7 @@ classdef GitVerClass < handle
             obj.hProg.StatusMessage = lStr;            
             
             % sets up the repository struct object            
-            obj.rObj = RepoStructure(); 
+            obj.rObj = RepoStructure('nHist',obj.iData.nHist);
             obj.rObj.isMod = obj.detIfHeadModified();            
             
             % groups the branch names
@@ -377,11 +377,10 @@ classdef GitVerClass < handle
                     
                     % resets the local branches (for those whose head
                     % doesn't match)
-                    for i = 1:length(cIDL)
-                        if ~strcmp(cIDL{i},cIDR{i})
-                            obj.gfObj.checkoutBranch('local',cIDL{i})
-                            obj.gfObj.matchRemoteBranch(cIDL{i});                            
-                        end
+                    brStrL = brInfo(~isR,1);
+                    for i = find(~strcmp(cIDL,cIDR)')
+                        obj.gfObj.checkoutBranch('local',brStrL{i})
+                        obj.gfObj.matchRemoteBranch(brStrL{i});
                     end               
                     
                     % checks out the original branch
@@ -1933,7 +1932,7 @@ classdef GitVerClass < handle
                     
                 case 'radioLastVer'
                     % case is using all commits
-                    obj.rObj = RepoStructure('nHist',obj.iData.nHist);                    
+                    obj.rObj = RepoStructure('nHist',obj.iData.nHist);
                     
                 case 'radioDateFilt'
                     % case is filtering by date
