@@ -1,6 +1,8 @@
 classdef GitFunc
-    % Class properties
+    
+    % hidden class properties
     properties(Hidden)
+        % identifier fields
         gDirP
         rType
         gName
@@ -13,7 +15,7 @@ classdef GitFunc
         tKeyU = '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';
     end
     
-    % Class functions
+    % class methods
     methods
         % --- class constructor
         function obj = GitFunc(rType,gDirP,gName)
@@ -1508,12 +1510,6 @@ classdef GitFunc
                 case 'reset-commit-message'
                     % resets the commit message
                     mStr = varargin{1};
-                    gitCmdStr = sprintf('commit --amend -m "%s"',mStr);
-                    
-                case 'set-sequence-editor'
-                    % resets the sequence editor script string
-                    nwStr = varargin{1};
-                    
                     
                 case 'reset-branch-name'
                     % resets the commit message

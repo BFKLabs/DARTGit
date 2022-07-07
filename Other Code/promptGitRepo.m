@@ -1,15 +1,12 @@
 % --- determines all the git repo directories within the project
 function [rType,gDir,gRepoDir,gName] = promptGitRepo(promptUser)
 
-% global variables
-global mainProgDir
-
 % initialisations
 [rType,gDir] = deal([]);
 if ~exist('promptUser','var'); promptUser = true; end
 
 % searches all the sub-folders starting from the main program path
-gDir0 = searchSubFolders(mainProgDir);
+gDir0 = searchSubFolders(getProgFileName());
 if isempty(gDir0)
     % if there are none then output an error to screen
     eStr = 'Error! No Git respositories found within current DART version.';
@@ -19,13 +16,20 @@ if isempty(gDir0)
     return
 end
 
+% for non-developers, remove access to the Git functions repository
+GF = GitFunc();
+if GF.uType > 0
+    isOK = ~strcmp(cellfun(@getFileName,gDir0,'un',0),'Git');
+    gDir0 = gDir0(isOK);
+end
+
 % retrieves the paths of the git repositories
 gRepoDir0 = cellfun(@(x)(fread(fopen(fullfile(x,'.git'),'r'),...
-                                 inf,'uint8=>char')'),gDir0(:),'un',0);
+                                 inf,'uint8=>char')'),gDir0(:),'un',0);                         
 gRepoDir = cellfun(@(x)(x(9:end-1)),gRepoDir0,'un',0);
 fclose('all');
 
-% ensures the 
+% ensures the .git files are present 
 for i = find(strContains(gRepoDir,'Code/Common/Git'))'
     % deletes the previous file
     gRepoFile = fullfile(gDir0{i},'.git');

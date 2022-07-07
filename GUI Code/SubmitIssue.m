@@ -378,9 +378,8 @@ if ~isempty(h); delete(h); end
 % --- initialises the object properties
 function ok = initObjProps(handles,hFig)
 
-% global variables
-global mainProgDir
-cd(mainProgDir)
+% changes the directory to the program main folder
+cd(getProgFileName())
 
 % java import
 import javax.swing.*

@@ -82,9 +82,6 @@ menuExit_Callback(handles.menuExit, [], handles)
 % -------------------------------------------------------------------------
 function menuExit_Callback(hObject, eventdata, handles)
 
-% global variables
-global mainProgDir
-
 % prompts the user if they wish to close the tracking gui
 uChoice = questdlg('Are you sure you want to close the Git Version GUI?',...
                    'Close Git Version GUI?','Yes','No','Yes');
@@ -100,7 +97,7 @@ hFig = getappdata(handles.figGitVersion,'hFig');
 gitEnvVarFunc('remove','GIT_DIR')
 
 % changes the directory back down to the main directory and closes the GUI
-cd(mainProgDir)
+cd(getProgFileName())
 delete(handles.figGitVersion)
 
 % sets the main GUI visible again

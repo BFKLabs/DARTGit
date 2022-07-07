@@ -536,12 +536,9 @@ tmpDir = 'Test Files/TempDiff';
 % --- performs the temporary directory function type
 function tmpDirFunc(type)
 
-% global variables
-global mainProgDir
-
 % retrieves the full temporary directory name
 tmpDir = getTempDiffFileDir();
-tmpDirFull = strrep(fullfile(mainProgDir,tmpDir),'/',filesep);
+tmpDirFull = strrep(getProgFileName(tmpDir),'/',filesep);
 
 switch (type)
     case 'add'

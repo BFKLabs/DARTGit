@@ -1,13 +1,10 @@
 function createGitIgnoreFile(GF)
 
-% global variables
-global mainProgDir
-
 % initialisations
 zipFile = [];
 
 % sets the base git repository directory
-gDir = fullfile(mainProgDir,'Git','Repo');
+gDir = getProgFileName('Git','Repo');
 
 % sets the git repository type dependent on the input
 switch GF.rType
@@ -15,7 +12,7 @@ switch GF.rType
         gRepo = 'DART';
        
         % sets the zip file array
-        fexDir = fullfile(mainProgDir,'Code','Common','File Exchange');
+        fexDir = getProgFileName('Code','Common','File Exchange');
         zipFile = {'ExeUpdate.zip';...
                    fullfile(fexDir,'ColoredFieldCellRenderer.zip')};
         
@@ -118,14 +115,12 @@ fclose(fid);
 % --- converts the zip file path
 function zipFile = convertZipFilePath(zipFile)
 
-% global variables
-global mainProgDir
-
 % exits if the zip file is empty
 if isempty(zipFile); return; end
 
 % converts the absolute path to the relative path
+progDir = getProgFileName();
 for i = 1:length(zipFile)
-    zipFile{i} = strrep(zipFile{i},mainProgDir,'');
+    zipFile{i} = strrep(zipFile{i},progDir,'');
     zipFile{i} = strrep(zipFile{i},'\','/');
 end

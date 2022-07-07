@@ -2,9 +2,6 @@
 %     from the current status (ignoring any local commits)
 function tFile = createMasterDiffPatch(GF,mID,lID,lID2)
 
-% global variables
-global mainProgDir
-
 % retrieves the difference string
 if exist('lID2','var')
     % case is 2 local commits are provided
@@ -15,7 +12,7 @@ else
 end
 
 % creates the patch file
-tFile = fullfile(mainProgDir,'External Files','TempPatch.diff');
+tFile = getProgFileName('External Files','TempPatch.diff');
 fObj = fopen(tFile,'w+');
 fwrite(fObj,strjoin(dStr,'\n'));
 fclose(fObj);

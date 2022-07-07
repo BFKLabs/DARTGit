@@ -92,9 +92,6 @@ try; menuExit_Callback(handles.menuExit, [], handles); end
 % -------------------------------------------------------------------------
 function menuExit_Callback(~, ~, handles)
 
-% global variables
-global mainProgDir
-
 % prompts the user if they wish to close the tracking gui
 qStr = 'Are you sure you want to close the Git Commit GUI?';
 uChoice = questdlg(qStr,'Close Git Commit GUI?','Yes','No','Yes');
@@ -131,8 +128,7 @@ if ~isempty(findall(0,'tag','figGitVersion')) && commitAll
 end
 
 % changes the directory back down to the main directory and closes the GUI
-cd(mainProgDir)
-delete(hFig)
+cd(getProgFileName())
 
 % runs the post commit function (if any)
 if ~isempty(postCommitFcn)    

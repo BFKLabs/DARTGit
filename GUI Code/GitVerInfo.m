@@ -68,9 +68,6 @@ delete(handles.figVerInfo);
 % --- initialises the object properties
 function initObjProps(handles)
 
-% global variables
-global mainProgDir
-
 % parameters
 dX = 10;
 
@@ -156,7 +153,7 @@ for i = 1:nRepo
 end
 
 % sets the directory to the main
-cd(mainProgDir)
+cd(getProgFileName())
 
 % deletes the loadbar
 try; delete(h); end

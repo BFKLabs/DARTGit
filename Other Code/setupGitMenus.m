@@ -1,10 +1,7 @@
 % --- sets up the git menu items
 function setupGitMenus(hFig)
 
-% global variables
-global mainProgDir
-
-if ~exist(fullfile(mainProgDir,'.git'),'file')
+if ~exist(getProgFileName('.git'),'file')
     % if the git directory does not exist in the main directory, then exit
     return
 elseif ~isempty(findall(hFig,'tag','hGitP'))
