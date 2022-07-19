@@ -71,6 +71,7 @@ function initObjProps(handles)
 
 % parameters
 dX = 10;
+GF0 = GitFunc();
 hFig = handles.figVerInfo;
 
 % retrieves the repo information
@@ -80,7 +81,7 @@ hFig = handles.figVerInfo;
 sStr = {'','s'};
 nRepo = length(rType);
 nowStr = {datestr(now,'yyyy-mm-dd HH:MM')};
-[Data,ok] = deal(cell(nRepo,3),false(nRepo,1));
+[Data,ok] = deal(cell(nRepo,4),false(nRepo,1));
 
 % loads the update information from the parameter file
 pFile = getParaFileName('RepoUpdate.mat');
@@ -105,6 +106,11 @@ else
     save(pFile,'-struct','A');
 end
 
+% if a user, remove the git functions repo
+if GF0.uType > 0
+    ii = ~strcmp(A.grUpdate(:,1),'Git Functions');
+    A.grUpdate = A.grUpdate(ii,:);
+end
 
 % sets the repo name and update information
 Data(:,[1,4]) = A.grUpdate;

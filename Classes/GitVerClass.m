@@ -300,8 +300,8 @@ classdef GitVerClass < handle
             % if a developer, then ensure the local and remote repositories
             % match (NB - this is important for picking up hotfix branches)
             if obj.gfObj.uType == 0     
-                % initialisations
-                isMod = false;
+%                 % initialisations
+%                 isMod = false;
                 
                 % ensures that the origin url has been set
                 if isempty(obj.gfObj.gitCmd('get-origin'))
@@ -2327,7 +2327,9 @@ classdef GitVerClass < handle
                 uChoice = QuestDlgMulti(bStr(i0:end),qStr,qtStr);
                 if strcmp(uChoice,'View')
                     % views the current changes on the branch
+                    wState = warning('off','all');
                     waitfor(GitViewChanges(obj.gfObj))
+                    warning(wState);
                     
                 else
                     % otherwise, exit the loop

@@ -52,4 +52,6 @@ SubmitIssue(hFig)
 function VI_Callback(hObject, eventdata, hFig)
 
 % runs the Git Version Information
+wState = warning('off','all');
 GitVerInfo()
+warning(wState);
