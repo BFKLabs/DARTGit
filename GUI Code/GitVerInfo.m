@@ -27,6 +27,7 @@ handles.output = hObject;
 
 % initialises the gui information and centres it within the screen
 initObjProps(handles)
+set(hObject,'WindowStyle','modal')
 
 % Update handles structure
 guidata(hObject, handles);
@@ -70,6 +71,7 @@ function initObjProps(handles)
 
 % parameters
 dX = 10;
+hFig = handles.figVerInfo;
 
 % retrieves the repo information
 [rType,gDirP,gRepoDir,gName] = promptGitRepo(false);
@@ -182,4 +184,5 @@ set(handles.figVerInfo,'Visible','on')
 pause(0.05);
 
 % sets the horizontally aligned data into the table
+set(hFig,'CloseRequestFcn',{@figVerInfo_CloseRequestFcn,handles})
 setHorizAlignedTable(handles.tableVerInfo,Data)

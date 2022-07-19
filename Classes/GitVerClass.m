@@ -381,6 +381,7 @@ classdef GitVerClass < handle
                     for i = find(~strcmp(cIDL,cIDR)')
                         obj.gfObj.checkoutBranch('local',brStrL{i})
                         obj.gfObj.matchRemoteBranch(brStrL{i});
+                        cIDL{i} = cIDR{i};
                     end               
                     
                     % checks out the original branch

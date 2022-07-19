@@ -93,7 +93,8 @@ classdef GitGraph < dynamicprops & handle
             
             % retrieves the distingishable colours
             obj.nRow = obj.rObj.nCommit;     
-            obj.cCol = distinguishable_colors(obj.rObj.nBr,'k');                       
+            obj.cCol = distinguishable_colors(obj.rObj.nBr,'k');   
+            obj.headCol = obj.desaturateColour([1,0.85,0],1/2);
             
             % creates the linking marker coordinates
             [xL,k] = deal((-1:0.1:1)',5);
@@ -158,17 +159,22 @@ classdef GitGraph < dynamicprops & handle
             % creates the highlight patch object            
             obj.yFill = (iy-1)*obj.txtHY;
             
-            % creates the head patch object
-            yFillHd = ((iy+obj.headInd)-2)*obj.txtHY;
-            obj.hFillHd = patch(xP(ix),yFillHd,obj.headCol,...
-                                'UserData',obj.headInd,...
-                                'facealpha',1,'Visible','on');  
-                            
             % creates the highlight/selection patch objects
             obj.hFillH = patch(xP(ix),NaN(1,5),pColS,'UserData',NaN,...
                                 'facealpha',fAlphaH,'Visible','off');
             obj.hFillS = patch(xP(ix),NaN(1,5),pColS,'UserData',NaN,...
-                                'facealpha',fAlphaS,'Visible','off'); 
+                                'facealpha',fAlphaS,'Visible','off');             
+            
+            % creates the head patch object
+            if ~isempty(obj.headInd)
+                yFillHd = ((iy+obj.headInd)-2)*obj.txtHY;
+                obj.hFillHd = patch(xP(ix),yFillHd,obj.headCol,...
+                                    'UserData',obj.headInd,...
+                                    'facealpha',1,'Visible','on'); 
+            else
+                obj.hFillHd = patch(xP(ix),NaN(size(ix)),obj.headCol,...
+                                    'facealpha',1,'Visible','on');                 
+            end           
                             
             % updates the fill object properties
             hFillAll = [obj.hFillHd,obj.hFillH,obj.hFillS];
@@ -498,8 +504,7 @@ classdef GitGraph < dynamicprops & handle
                         hTxtH = obj.createTextObj(XDesc,Y,txtH,0,'left');                        
                         
                         % updates the text colour and head index
-                        obj.headInd = iID(j);
-                        obj.headCol = obj.desaturateColour([1,0.85,0],1/2);                      
+                        obj.headInd = iID(j);                                              
                         set(hTxtH,'BackgroundColor',obj.headCol,...
                                   'EdgeColor','k','FontWeight','bold',...
                                   'tag','hTxtHead');                                             
