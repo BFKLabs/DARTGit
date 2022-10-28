@@ -281,8 +281,10 @@ classdef RepoStructure < handle
         function finaliseRepoStructure(obj)
             
             % retrieves the git history data struct
+            GF = GitFunc();
             isMaster = strcmp(obj.brData(:,1),'master');
             gHistM = obj.gHist(isMaster);
+            brName = field2cell(obj.gHist,'brName');
             
             % determines if extra filtering is required
             if obj.nHist > 0
@@ -292,13 +294,19 @@ classdef RepoStructure < handle
                     return
                 end
                 
-                % determines the index of the current commit
-                [~,gitStr] = system('git describe --contains --all HEAD');
-                brStr = getArrayVal(strsplit(strtrim(gitStr),'~'),1);
-                iBr = strcmp(field2cell(obj.gHist,'brName'),brStr);
-                cIDBr = table2array(obj.gHist(iBr).brInfo(:,2));
-                iCm = find(strcmp(cIDBr,obj.headID));
+                % determines index of branch containing current commit
+                if GF.uType
+                    brStr = 'master';
+                else
+                    gitCmd = 'git describe --contains --all HEAD';
+                    [~,gitStr] = system(gitCmd);
+                    brStr = getArrayVal(strsplit(strtrim(gitStr),'~'),1);
+                end
                 
+                iBr = strcmp(brName,brStr);                
+                cIDBr = table2array(obj.gHist(iBr).brInfo(:,2));
+                iCm = find(strcmp(cIDBr,obj.headID));                
+                    
                 % if the commit index exceeds nHist, then reset nHist
                 if iCm > obj.nHist; obj.nHist = iCm; end
                 
