@@ -1530,12 +1530,10 @@ classdef GitVerClass < handle
                 end
                 
                 % checks out the branch (depending on the branch index)
+                obj.gfObj.checkoutBranch('version',cIDS) 
                 if iCm == 1   
                     % if the latest commit, then checkout the branch  
-                    obj.gfObj.gitCmd('checkout-local',brNameNw);
-                else
-                    % otherwise, checkout the version from the commit ID
-                    obj.gfObj.checkoutBranch('version',cIDS)            
+                    obj.gfObj.gitCmd('checkout-local',brNameNw); 
                 end
                 
                 % removes the item from the list
@@ -1560,7 +1558,7 @@ classdef GitVerClass < handle
             obj.clearCodeInfo();
             setObjEnable(hObject,0); 
             
-            %
+            % updates the commit information tabs
             set(obj.gObj.hFillS,'UserData',NaN,'Visible','off');
             obj.updateCommitDiffInfo()
             

@@ -21,8 +21,16 @@ else
     dStrF = cellfun(@(x)(strsplit(x,'\t')),X,'un',0);
 end
 
-fDir = cellfun(@(x)(fileparts(x{2})),dStrF,'un',0);
-fName = cellfun(@(x)(getFileName(x{2},1)),dStrF,'un',0);
+% reduces the array to the feasible entries
+dStrF = dStrF(cellfun(@length,dStrF) == 2);
+if isempty(dStrF)
+    % if there are no feasible entires then exit
+    return
+else
+    % otherwise, retrieve the directory/file names
+    fDir = cellfun(@(x)(fileparts(x{2})),dStrF,'un',0);
+    fName = cellfun(@(x)(getFileName(x{2},1)),dStrF,'un',0);
+end
 
 for i = 1:length(dStrF)
     if ~any(strcmp(ignoreFiles,fName{i}))

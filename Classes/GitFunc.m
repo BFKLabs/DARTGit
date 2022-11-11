@@ -374,6 +374,9 @@ classdef GitFunc
         % --- add/removes the directories between versions from the 
         %     matlab path
         function addRemoveDir(obj,cID,nwID)
+            
+            % global variables
+            global mainProgDir
         
             % determines the difference between the 2 versions
             if startsWith(cID,nwID)
@@ -397,15 +400,15 @@ classdef GitFunc
             fDir = cellfun(@(x)(fileparts(x{2})),dBrSp,'un',0);
 
             % determines if there are any files that will be removed
-            isRmv = strcmp(fStatus,'D');
+            isRmv = strcmp(fStatus,'D') | startsWith(fStatus,'R');
             if any(isRmv)
                 % determines the unique removal directories
                 rmvDir = obj.getDiffFileNames(fDir(isRmv));
-                [rmvDirU,~,iC] = unique(rmvDir);
+                rmvDirU = unique(rmvDir);
 
                 % sorts the directories by descreasing depth
                 iNw = argSort(cellfun(@(x)...
-                                    (length(strsplit(x,'/'))),rmvDirU),1);
+                                (length(strsplit(x,filesep))),rmvDirU),1);
                 rmvDirU = rmvDirU(iNw);
 
                 % determines if, for any directory from which files are 
@@ -414,7 +417,8 @@ classdef GitFunc
                 for i = 1:length(rmvDirU)
                     % if all files in the directory have been removed, and 
                     % is on the matlab path, then remove from the path
-                    if (length(dir(rmvDirU{i}))-2) == sum(iC==iNw(i))
+                    nFileD = sum(strcmp(rmvDir,rmvDirU{i}));
+                    if (length(dir(rmvDirU{i}))-2) == nFileD
                         if strContains(path,rmvDirU{i})
                             rmpath(rmvDirU{i})
                         end
@@ -428,8 +432,12 @@ classdef GitFunc
                 % retrieves the names/directories of the files to be added
                 addDir = obj.getDiffFileNames(fDir(isAdd));           
 
-                % determines if the new directories are on the matlab path
-                fullPath = path;
+                % retrieves the path directories (removes all directories
+                % not within the DART program directory)
+                fullPath = arr2vec(strsplit(path,';'));
+                fullPath = fullPath(startsWith(fullPath,mainProgDir));
+                
+                % determines if the new directories are on the matlab path                
                 for i = 1:length(addDir)
                     % if not, then create a new directory and add to path
                     if ~strContains(fullPath,addDir{i})
@@ -437,10 +445,11 @@ classdef GitFunc
                         wState = warning('off','all');
                         mkdir(addDir{i});
                         addpath(addDir{i});
+                        pause(0.01);
                         warning(wState);
 
                         % appends the new directory to the full path
-                        fullPath = sprintf('%s\n%s',fullPath,addDir{i});
+                        fullPath = [fullPath;addDir{i}];
                     end
                 end
             end        
