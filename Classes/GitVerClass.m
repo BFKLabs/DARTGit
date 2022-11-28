@@ -1347,7 +1347,7 @@ classdef GitVerClass < handle
             
             % determines if there are any merges on this branch
             mCID = obj.rObj.gHist(iBrD).brInfo.mCID;
-            hasMerge = any(~cellfun(@isempty,mCID));
+            hasMerge = any(~cellfun('isempty',mCID));
             
             % adds an empty commit to the deleted branch and then returns
             % to the current branch
@@ -1787,7 +1787,7 @@ classdef GitVerClass < handle
             % retrieves the history field for the current branch
             indM = arrayfun(@(x)(find(strcmp(x.brInfo.CID,....
                                 obj.rObj.headID))),obj.rObj.gHist,'un',0);
-            indBr = ~cellfun(@isempty,indM);
+            indBr = ~cellfun('isempty',indM);
             gHist = obj.rObj.gHist(indBr);
             
             % sets the version string
@@ -2066,7 +2066,7 @@ classdef GitVerClass < handle
                         (x.brInfo.CID,cID))),obj.rObj.gHist,'un',0);
                     
             % sets the branch/commit indices
-            iBr = find(~cellfun(@isempty,indM));
+            iBr = find(~cellfun('isempty',indM));
             iCm = indM{iBr};
             
         end        
@@ -2344,7 +2344,7 @@ classdef GitVerClass < handle
                 % determines the branch/commit indices of highlighted row
                 indM = arrayfun(@(x)(find(str2double...
                             (x.brInfo.ID)==iRowH0)),obj.rObj.gHist,'un',0);
-                iBr = ~cellfun(@isempty,indM);
+                iBr = ~cellfun('isempty',indM);
                 iCm = indM{iBr};   
                 cIDS = obj.rObj.gHist(iBr).brInfo.CID{iCm};
             catch

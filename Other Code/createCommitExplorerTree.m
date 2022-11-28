@@ -8,7 +8,7 @@ import com.mathworks.mwswing.checkboxtree.*
 dX = 10;
 hPanel = handles.panelFileChanges;
 rStr = {'Current local version is up to date!','Code Changes...'};
-hasFiles = any(cellfun(@length,getAllStructFields(sDiff)) > 0);
+hasFiles = any(cellfun('length',getAllStructFields(sDiff)) > 0);
 
 % sets up the directory trees structure
 rootStr = setHTMLColourString('kb',rStr{1+hasFiles},1);

@@ -19,7 +19,7 @@ if length(iSel) > 1
     iM = cellfun(@(x)(find(strcmp(field2cell(x,'ID'),mID))),gHistL,'un',0);
     
     % retrieves the matching local branch git history
-    isL = ~cellfun(@isempty,iM);
+    isL = ~cellfun('isempty',iM);
     if any(isL)
         iSel(2) = length(gHistL{isL})-iSel(2);    
         if (iSel(2) > length(gHistL{isL})) || (iSel(2) == 0)

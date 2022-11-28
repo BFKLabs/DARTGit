@@ -227,8 +227,8 @@ classdef RepoStructure < handle
             % calculates the symbol column gap
             nGap = cellfun(@(x)...
                         (regexp(x,'\{','once')-1),obj.logStr,'un',0);
-            hasC = ~cellfun(@isempty,nGap);
-            nGap(~hasC) = cellfun(@length,obj.logStr(~hasC),'un',0);
+            hasC = ~cellfun('isempty',nGap);
+            nGap(~hasC) = num2cell(cellfun('length',obj.logStr(~hasC)));
             
             % sets the master branch name
             obj.nCommit = sum(hasC);
@@ -400,7 +400,7 @@ classdef RepoStructure < handle
             obj.finaliseBranchPaths();
             
             % retrieves the branch indices for each commit
-            indI = find(~cellfun(@isempty,obj.bInfo(:,1)));
+            indI = find(~cellfun('isempty',obj.bInfo(:,1)));
             indCG = num2cell(obj.indCm(indI,:),2);
             indM = cellfun(@(x,y)(find(x==y)),indCG,num2cell(indI),'un',0);
              
@@ -453,7 +453,7 @@ classdef RepoStructure < handle
                 end     
                 
                 % sets the channel index
-                hasCL = ~cellfun(@isempty,obj.bInfo(:,1));                
+                hasCL = ~cellfun('isempty',obj.bInfo(:,1));                
                 indBrRow = find(any(obj.indBr(hasCL,:) == i,2));
                 if ~isempty(indBrRow)
                     iRow{i} = indBrRow(1):indBrRow(end);
@@ -509,7 +509,7 @@ classdef RepoStructure < handle
             while cont
                 % gets the next group symbol from the current point
                 [gSymS,dxi] = obj.getNewSymbols(pC);
-                iSym = find(~cellfun(@isempty,gSymS));
+                iSym = find(~cellfun('isempty',gSymS));
                 
                 % determines 
                 switch length(iSym)

@@ -101,8 +101,8 @@ classdef GitGraph < dynamicprops & handle
             obj.pLink = [1./(1+exp(-k*xL)),(xL+1)/2];
 
             % determines the local to global indices
-            obj.indL2G = find(~cellfun(@isempty,obj.rObj.bInfo(:,1))); 
-            obj.iRowCm = cumsum(~cellfun(@isempty,obj.rObj.bInfo(:,1)));                          
+            obj.indL2G = find(~cellfun('isempty',obj.rObj.bInfo(:,1))); 
+            obj.iRowCm = cumsum(~cellfun('isempty',obj.rObj.bInfo(:,1)));                          
             
         end                
         
@@ -310,8 +310,8 @@ classdef GitGraph < dynamicprops & handle
             % determines the non-empty graph symbols
             pBr = cell(obj.rObj.nBr,1);  
             gSym = obj.rObj.gSym(:,2:end-1);
-            hasSym = ~cellfun(@isempty,gSym);
-            hasCom = ~cellfun(@isempty,obj.rObj.bInfo(:,1)); 
+            hasSym = ~cellfun('isempty',gSym);
+            hasCom = ~cellfun('isempty',obj.rObj.bInfo(:,1)); 
             
             % determnes the points on the first column that belong to the
             % master branch
@@ -434,7 +434,7 @@ classdef GitGraph < dynamicprops & handle
             end       
 
             % updates the merge commit scatterplot marker edge colours
-            for i = find(~cellfun(@isempty,X(:,2)'))
+            for i = find(~cellfun('isempty',X(:,2)'))
                 % determines the index of the marker to be updated
                 iMrg = strcmp(obj.rObj.brData(:,1),X{i,3});
                 iComm = strcmp(obj.rObj.gHist(iMrg).brInfo.CID,X{i,2}); 

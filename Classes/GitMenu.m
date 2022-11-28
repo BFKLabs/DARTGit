@@ -55,7 +55,7 @@ classdef GitMenu < handle
             set(hMain.textCurrBranch,'string',cBr)            
             
             % other initialisations
-            nMenu = cellfun(@length,bStrGrp);
+            nMenu = cellfun('length',bStrGrp);
             hMenu = cell(length(mStr),1);
             
             % creates the branch menu items
@@ -80,7 +80,7 @@ classdef GitMenu < handle
                         end
                     
                     case 'Delete'                        
-                        nMenu = cellfun(@length,bStrGrp);
+                        nMenu = cellfun('length',bStrGrp);
                         set(hMenu{i},'enable',eStr{1+(sum(nMenu)>1)})
                         if any(nMenu>0)
                             i0 = find(nMenu(2:end)>0,1,'first')+1;
@@ -399,7 +399,7 @@ classdef GitMenu < handle
             iType = obj.GitBranch.removeBranchString(delBr);                        
             
             % determines the number of items within each branch group type
-            nMenu = cellfun(@length,obj.GitBranch.bStrGrp);
+            nMenu = cellfun('length',obj.GitBranch.bStrGrp);
             
             % removes the menu items from the branch menus
             for i = 2:4

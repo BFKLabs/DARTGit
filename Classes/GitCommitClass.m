@@ -193,7 +193,7 @@ classdef GitCommitClass < handle
             
             % determines if there are any modified file (over all the
             % modified file types)
-            nFile = cellfun(@length,getAllStructFields(obj.sDiff));
+            nFile = cellfun('length',getAllStructFields(obj.sDiff));
             hasFiles = any(nFile > 0);
 
             % memory allocation for the code difference blocks
@@ -452,7 +452,7 @@ classdef GitCommitClass < handle
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
             % determines if there are any files that still need commiting
-            hasFiles = any(cellfun(@length,sDiffC) > 1);
+            hasFiles = any(cellfun('length',sDiffC) > 1);
 
             % clears/disables all code difference objects associated
             set(handles.tableCodeLine,'data',[])
@@ -575,7 +575,7 @@ classdef GitCommitClass < handle
 
             % sets the tab header strings
             sDiffC = getAllStructFields(obj.sDiff);
-            nFile = cellfun(@length,sDiffC);
+            nFile = cellfun('length',sDiffC);
 
             % retrieves the fieldnames from struct
             tStrD = fieldnames(obj.sDiff);

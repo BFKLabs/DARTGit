@@ -168,7 +168,7 @@ else
         if any(strcmp(cBr0,cBrRmv))
             % determines if there are any merges on the branch
             mCID = vObj.rObj.gHist(iBr).brInfo.mCID;
-            hasMerge = any(~cellfun(@isempty,mCID));
+            hasMerge = any(~cellfun('isempty',mCID));
             
             % deletes the local and remote branches
             vObj.gfObj.gitCmd('delete-local',cBrRmv,hasMerge)

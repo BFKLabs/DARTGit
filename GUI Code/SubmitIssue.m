@@ -260,7 +260,7 @@ else
     ghDataS = cellfun(@(x)(strsplit(x,'\t')),ghData0(:),'un',0);
     
     % resets any labels that are missing
-    nC = cellfun(@length,ghDataS);
+    nC = cellfun('length',ghDataS);
     for i = find(nC' == 4)
         ghDataS{i} = [ghDataS{i}(1:3),{''},ghDataS{i}(4)];
     end

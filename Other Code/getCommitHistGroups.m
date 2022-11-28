@@ -19,5 +19,5 @@ histStrGrp = cellfun(@(x)(x(1:end-isempty(x{end}))),histStrGrp,'un',0);
 
 % 
 if nargin == 2
-    histStrGrp = histStrGrp(cellfun(@length,histStrGrp)==4);
+    histStrGrp = histStrGrp(cellfun('length',histStrGrp)==4);
 end

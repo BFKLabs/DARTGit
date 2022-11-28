@@ -332,7 +332,7 @@ classdef GitBranch < handle
                     obj.hMain.menuBranch,'tag',x)),obj.mStr,'un',0);            
             
             % calculates the number of menu items per grouping
-            nMenu = cellfun(@length,obj.bStrGrp);
+            nMenu = cellfun('length',obj.bStrGrp);
             
             % creates the new menu item
             for i = 3:4
@@ -414,7 +414,7 @@ classdef GitBranch < handle
                     obj.hMain.menuBranch,'tag',x)),obj.mStr,'un',0);             
             
             % calculates the number of menu items per grouping
-            nMenu = cellfun(@length,obj.bStrGrp);
+            nMenu = cellfun('length',obj.bStrGrp);
             
             % creates the new menu item
             for i = 3:4

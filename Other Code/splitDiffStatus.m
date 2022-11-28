@@ -22,7 +22,7 @@ else
 end
 
 % reduces the array to the feasible entries
-dStrF = dStrF(cellfun(@length,dStrF) == 2);
+dStrF = dStrF(cellfun('length',dStrF) == 2);
 if isempty(dStrF)
     % if there are no feasible entires then exit
     return
