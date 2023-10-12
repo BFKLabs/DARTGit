@@ -602,7 +602,8 @@ classdef GitGraph < dynamicprops & handle
             obj.resetScrollbarLimits();
             
         end
-                                 
+                    
+        % --- resets the horizontal/vertical scrollbar limits
         function resetScrollbarLimits(obj)
     
             % sets the vertical scroll bar enabled properties (if the
@@ -623,8 +624,11 @@ classdef GitGraph < dynamicprops & handle
             else
                 yMin = obj.yLim0(2)-obj.axHght;
                 sStepY = min(1,(obj.txtHY/abs(yMin)))*[1,1];
+                yVal = max(yMin,obj.hScrollY.Value);                
                 set(obj.hScrollY,'Min',yMin,'SliderStep',sStepY,...
-                                 'Enable','on')
+                                 'Enable','on','Value',yVal);
+                             
+                obj.updateScrollBarY([],[]);
             end             
             
         end        
@@ -634,10 +638,10 @@ classdef GitGraph < dynamicprops & handle
         % -------------------------- %
         
         % --- function for the scrollbar update
-        function updateScrollBarY(obj,~,eventdata)
+        function updateScrollBarY(obj,~,~)
             
             % updates the axes limits
-            nwVal = get(eventdata.AffectedObject,'Value'); 
+            nwVal = obj.hScrollY.Value; 
             set(obj.hAx,'ylim',obj.yLim0-nwVal)
             
         end

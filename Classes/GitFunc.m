@@ -1085,6 +1085,10 @@ classdef GitFunc
                         gitCmdStr = sprintf('cherry -v %s',cBr);
                     end
                     
+                case 'get-commit-count'
+                    % retrieves the current branch count
+                    gitCmdStr = 'rev-list --count HEAD';
+                    
                 case 'compare-commit'
                     % sets the input arguments
                     [cID1,cID2] = deal(varargin{1},varargin{2});

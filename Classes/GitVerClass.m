@@ -33,6 +33,7 @@ classdef GitVerClass < handle
         nTab
         indD
         nHist0
+        nHistMax
         isMenuOpen = false;
         
         % cell arrays
@@ -51,6 +52,7 @@ classdef GitVerClass < handle
     
     % class methods
     methods
+        
         % --- class constructor
         function obj = GitVerClass(hFig)
             
@@ -79,8 +81,12 @@ classdef GitVerClass < handle
             % sets the original master history count
             obj.nHist0 = size(obj.rObj.gHist(1).brInfo,1);
             
+            % gets the full commit count
+            nHistStr = obj.gfObj.gitCmd('get-commit-count');
+            obj.nHistMax = str2double(nHistStr);
+            
             % closes the progress bar
-            try; delete(obj.hProg); end
+            try delete(obj.hProg); catch; end
             
         end
         
@@ -89,7 +95,7 @@ classdef GitVerClass < handle
         % --------------------------------------------- %        
         
         % --- initialises all the object callback functions
-        function initObjCallbacks(obj)                      
+        function initObjCallbacks(obj)
             
             % objects with normal callback functions
             cbObj = {'editVerCount','buttonUpdateFilt','menuRefresh',...
@@ -735,21 +741,7 @@ classdef GitVerClass < handle
             % runs the reference log GUI
             GitRefLog(obj);          
             
-        end        
-        
-        % --- function called when there was a succesful update
-        function postRefLogCB(obj)
-            
-            % creates a loadbar
-            h = ProgressLoadbar('Updating Branch Graph...');
-
-            % resets the GUI objects
-            obj.resetGUIObjects(h)
-
-            % deletes the loadbar
-            delete(h)                 
-            
-        end
+        end                
         
         % --- callback function for clicking menuBranchInfo
         function menuBranchInfoCB(obj,~,~)
@@ -1451,7 +1443,7 @@ classdef GitVerClass < handle
             
             % determines if the new value is valid
             nwVal = str2double(get(hObject,'string')); 
-            if chkEditValue(nwVal,[1,obj.nHist0],1)
+            if chkEditValue(nwVal,[1,obj.nHistMax],1)
                 % if the new value is valid, then update the data struct
                 obj.iData.nHist = nwVal;
 
@@ -1737,7 +1729,7 @@ classdef GitVerClass < handle
                 end
             end
 
-        end             
+        end                     
         
         % -------------------------------------------------- %
         % --- OBJECT SELECTION CHANGE CALLBACK FUNCTIONS --- %
@@ -1844,7 +1836,7 @@ classdef GitVerClass < handle
                 obj.pDiff{obj.gObj.headInd,iSelS} = pDiffNw;
                 
                 % deletes the progress loadbar
-                try; delete(h); end                    
+                try delete(h); catch; end                    
             else
                 % if the struct exists, then extract it from the array
                 pDiffNw = obj.pDiff{obj.gObj.headInd,iSelS};
@@ -1890,6 +1882,12 @@ classdef GitVerClass < handle
             arrayfun(@(x)(set(x,'enable','off',...
                                 'BackgroundColor',bgCol)),hTxt)           
             
+            % resets the strings
+            tStr0 = arrayfun(@(x)(get(x,'String')),hTxt,'un',0);
+            for i = 1:length(hTxt)
+                hTxt(i).String = regexprep(tStr0{i},'\d','0');
+            end
+                            
         end
         
         % --- clears the code difference information table
@@ -2262,6 +2260,20 @@ classdef GitVerClass < handle
         % ----------------------- %
         % --- OTHER FUNCTIONS --- %
         % ----------------------- %            
+        
+        % --- function called when there was a succesful update
+        function postRefLogCB(obj)
+            
+            % creates a loadbar
+            h = ProgressLoadbar('Updating Branch Graph...');
+
+            % resets the GUI objects
+            obj.resetGUIObjects(h)
+
+            % deletes the loadbar
+            delete(h)                 
+            
+        end                
         
         % --- post commit change function
         function postCommitFcn(obj,comObj)
