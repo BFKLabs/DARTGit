@@ -20,7 +20,7 @@ end
 % End initialization code - DO NOT EDIT
 
 % --- Executes just before GitVerInfo is made visible.
-function GitVerInfo_OpeningFcn(hObject, eventdata, handles, varargin)
+function GitVerInfo_OpeningFcn(hObject, ~, handles, varargin)
 
 % Choose default command line output for GitVerInfo
 handles.output = hObject;
@@ -37,7 +37,7 @@ guidata(hObject, handles);
 
 
 % --- Outputs from this function are returned to the command line.
-function varargout = GitVerInfo_OutputFcn(hObject, eventdata, handles) 
+function varargout = GitVerInfo_OutputFcn(~, ~, handles) 
 
 % Get default command line output from handles structure
 varargout{1} = handles.output;
@@ -47,7 +47,7 @@ varargout{1} = handles.output;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % --- Executes when user attempts to close figVerInfo.
-function figVerInfo_CloseRequestFcn(hObject, eventdata, handles)
+function figVerInfo_CloseRequestFcn(~, ~, handles)
 
 % closes the windo
 menuExit_Callback(handles.menuExit, [], handles)
@@ -57,7 +57,7 @@ menuExit_Callback(handles.menuExit, [], handles)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % -------------------------------------------------------------------------
-function menuExit_Callback(hObject, eventdata, handles)
+function menuExit_Callback(~, ~, handles)
 
 % closes the figure
 delete(handles.figVerInfo);
@@ -164,7 +164,7 @@ end
 cd(getProgFileName())
 
 % deletes the loadbar
-try; delete(h); end
+try delete(h); catch; end
 
 % resets the height of the table
 tPos = get(handles.tableVerInfo,'Position');
