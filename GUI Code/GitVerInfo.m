@@ -157,6 +157,7 @@ for i = 1:nRepo
     
     % removes the git directory environment variables
     gitEnvVarFunc('remove','GIT_DIR');
+    [~,~] = system('setx GIT_DIR ""');
     GF.gitCmd('rmv-origin');
 end
 

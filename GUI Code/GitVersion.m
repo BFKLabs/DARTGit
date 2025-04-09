@@ -95,6 +95,7 @@ hFig = getappdata(handles.figGitVersion,'hFig');
 
 % removes the environment variable
 gitEnvVarFunc('remove','GIT_DIR')
+[~,~] = system('setx GIT_DIR ""');
 
 % changes the directory back down to the main directory and closes the GUI
 cd(getProgFileName())

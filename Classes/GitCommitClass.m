@@ -90,6 +90,7 @@ classdef GitCommitClass < handle
             
             % creates/sets the gitignore file 
             createGitIgnoreFile(obj.gfObj);
+            [~,~] = system('git config --unset core.bare');
 
             % retrieves the status string and splits into by line
             cd(obj.gfObj.gDirP)
@@ -381,7 +382,8 @@ classdef GitCommitClass < handle
             % readds any files flagged for deletion but were kept otherwise
             if length(obj.sDiff.Removed) > length(cFile.Removed)
                 % fetches the files from the remote branch
-                obj.gfObj.gitCmd('remote-fetch',obj.cBr);
+%                 obj.gfObj.gitCmd('remote-fetch',obj.cBr);
+                obj.gfObj.gitCmd('fetch-origin',obj.cBr);                
                 for i = 1:length(obj.sDiff.Removed)
                     % re-adds the file if the current file is to be kept
                     if ~any(strcmp(cFile.Removed,obj.sDiff.Removed{i}))
